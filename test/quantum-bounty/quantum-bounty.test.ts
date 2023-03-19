@@ -1,14 +1,30 @@
 import '../aa.init'
-import {ethers} from 'hardhat'
-import {expect} from 'chai'
-import {QuantumBounty, QuantumBounty__factory} from '../../typechain'
+import { ethers } from 'hardhat'
+import { expect } from 'chai'
+import { QuantumBounty, QuantumBounty__factory } from '../../typechain'
+import {address} from "../solidityTypes";
 
 describe('QuantumBounty', () => {
   const ethersSigner = ethers.provider.getSigner()
   let bounty: QuantumBounty
+  const locks: address[] = []
 
   beforeEach(async function () {
-    bounty = await new QuantumBounty__factory(ethersSigner).deploy()
+    for (let i = 0; i < 10; i++) {
+      const wallet = ethers.provider.getSigner(i)
+      locks.push(await wallet.getAddress())
+    }
+    bounty = await new QuantumBounty__factory(ethersSigner).deploy(locks)
+  })
+
+  describe('Lock generation', () => {
+    it('should set locks', async () => {
+      for (let i = 0; i < locks.length; i++) {
+        const expectedLock = locks[i]
+        const bountyLock = await bounty.locks(i)
+        expect(bountyLock).to.equal(expectedLock)
+      }
+    })
   })
 
   describe('Add to bounty', () => {
@@ -16,7 +32,7 @@ describe('QuantumBounty', () => {
     const otherUser = ethers.provider.getSigner(1)
 
     async function testAddToBounty (func: () => Promise<void>): Promise<void> {
-      expect(await bounty.bounty()).to.eql(0)
+      expect(await bounty.bounty()).to.equal(0)
       await func()
       expect(await bounty.bounty()).to.equal(amountToAdd)
     }
