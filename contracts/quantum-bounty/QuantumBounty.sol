@@ -1,13 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.12;
 
-contract QuantumBounty {
-    uint256 public bounty;
-    address[] public locks;
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
-    constructor(address[] memory locksToSet) {
+
+contract QuantumBounty {
+    using ECDSA for bytes32;
+
+    uint256 public bounty;
+    address [10] public locks;
+
+    constructor(address[10] memory publicKeys) {
         bounty = 0;
-        locks = locksToSet;
+        locks = publicKeys;
     }
 
     function addToBounty() public payable {
@@ -22,12 +27,26 @@ contract QuantumBounty {
         addToBounty();
     }
 
-//    /**
-//     * withdraw value from the deposit
-//     * @param withdrawAddress target to send to
-//     * @param amount to withdraw
-//     */
-//    function withdrawTo(address payable withdrawAddress, uint256 amount) public onlyOwner {
-//        entryPoint.withdrawTo(withdrawAddress, amount);
-//    }
+    function widthdraw(bytes32 message, bytes[10] memory signatures) public {
+        bool canWithdraw = true;
+        for (uint8 i = 0; i < locks.length; i++) {
+            address lock = locks[i];
+            bytes memory signature = signatures[i];
+
+            bool success = message
+                .toEthSignedMessageHash()
+                .recover(signature) == lock;
+
+            if (!success) {
+                canWithdraw = false;
+                break;
+            }
+        }
+
+        require(canWithdraw, 'Invalid signatures');
+
+        uint256 winnings = bounty;
+        bounty = 0;
+        payable(msg.sender).call{value: winnings}("");
+    }
 }

@@ -2,27 +2,108 @@ import '../aa.init'
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { QuantumBounty, QuantumBounty__factory } from '../../typechain'
-import {address} from "../solidityTypes";
+import { address, bytes, bytes32 } from '../solidityTypes'
+import { BigNumber } from 'ethers'
+import { JsonRpcSigner } from '@ethersproject/providers/src.ts/json-rpc-provider'
 
 describe('QuantumBounty', () => {
-  const ethersSigner = ethers.provider.getSigner()
   let bounty: QuantumBounty
-  const locks: address[] = []
+  const signers: JsonRpcSigner[] = []
+  const publicKeys: address[] = []
 
-  beforeEach(async function () {
+  before(async () => {
     for (let i = 0; i < 10; i++) {
-      const wallet = ethers.provider.getSigner(i)
-      locks.push(await wallet.getAddress())
+      signers.push(ethers.provider.getSigner(i))
     }
-    bounty = await new QuantumBounty__factory(ethersSigner).deploy(locks)
+    for (const signer of signers) {
+      publicKeys.push(await signer.getAddress())
+    }
+  })
+
+  beforeEach(async () => {
+    const ethersSigner = ethers.provider.getSigner()
+    bounty = await new QuantumBounty__factory(ethersSigner).deploy(publicKeys)
+  })
+
+  describe('Withdraw', () => {
+    const arbitraryBountyAmount = BigNumber.from(100)
+    let arbitraryUser: JsonRpcSigner
+    let previousBalance: BigNumber
+    let message: bytes32
+
+    before(async () => {
+      arbitraryUser = ethers.provider.getSigner(1)
+      previousBalance = await arbitraryUser.getBalance()
+
+      message = ethers.utils.formatBytes32String('arbitrary')
+    })
+
+    beforeEach(async () => {
+      await bounty.addToBounty({ value: arbitraryBountyAmount })
+    })
+
+    describe('Correct Signatures', () => {
+      let signatures: bytes[]
+      let gasUsed: BigNumber
+
+      before(async () => {
+        signatures = await Promise.all(signers.map(async (signer) => await signer.signMessage(message)))
+      })
+
+      beforeEach(async () => {
+        const tx = await bounty.connect(arbitraryUser).widthdraw(message, signatures)
+        const receipt = await tx.wait()
+        gasUsed = BigNumber.from(receipt.cumulativeGasUsed).mul(BigNumber.from(receipt.effectiveGasPrice))
+      })
+
+      it('should have a bounty of zero afterwards', async () => {
+        expect(await bounty.bounty()).to.equal(0)
+      })
+
+      it('should send the bounty to the user', async () => {
+        const newBalance = await arbitraryUser.getBalance()
+        const expectedBalance = previousBalance.sub(gasUsed).add(arbitraryBountyAmount)
+        expect(newBalance).to.equal(expectedBalance)
+      })
+
+      // it('should set the bounty as solved', async () => {
+      //   expect(true).to.equal(false)
+      // })
+    })
+
+    describe('Incorrect Signatures', () => {
+      let signatures: bytes[]
+
+      before(async () => {
+        signatures = await Promise.all(signers.map(async (_) => await arbitraryUser.signMessage(message)))
+      })
+
+      beforeEach(async () => {
+        const tx = bounty.connect(arbitraryUser).widthdraw(message, signatures)
+        await expect(tx).to.be.revertedWith('Invalid signatures')
+      })
+
+      it('should have full bounty afterwards', async () => {
+        expect(await bounty.bounty()).to.equal(arbitraryBountyAmount)
+      })
+
+      it('should not send the bounty to the user', async () => {
+        const newBalance = await arbitraryUser.getBalance()
+        expect(newBalance).to.equal(previousBalance)
+      })
+
+      // it('should keep the bounty as unsolved', async () => {
+      //   expect(true).to.equal(false)
+      // })
+    })
   })
 
   describe('Lock generation', () => {
     it('should set locks', async () => {
-      for (let i = 0; i < locks.length; i++) {
-        const expectedLock = locks[i]
+      for (let i = 0; i < signers.length; i++) {
+        const expectedPublicKey = publicKeys[i]
         const bountyLock = await bounty.locks(i)
-        expect(bountyLock).to.equal(expectedLock)
+        expect(bountyLock).to.equal(expectedPublicKey)
       }
     })
   })
@@ -55,132 +136,5 @@ describe('QuantumBounty', () => {
         await otherUser.sendTransaction({ to: bounty.address, value: amountToAdd, data: arbitrary_data })
       })
     })
-
-    // it('should fail to withdraw without unlock', async () => {
-    //   const paymasterWithdraw = await paymaster.populateTransaction.withdrawTokensTo(token.address, AddressZero, 1).then(tx => tx.data!)
-    //
-    //   await expect(
-    //     account.execute(paymaster.address, 0, paymasterWithdraw)
-    //   ).to.revertedWith('DepositPaymaster: must unlockTokenDeposit')
-    // })
   })
-
-  // describe('#validatePaymasterUserOp', () => {
-  //   let account: SimpleAccount
-  //   const gasPrice = 1e9
-  //
-  //   before(async () => {
-  //     ({ proxy: account } = await createAccount(ethersSigner, await ethersSigner.getAddress(), entryPoint.address))
-  //   })
-  //
-  //   it('should fail if no token', async () => {
-  //     const userOp = await fillAndSign({
-  //       sender: account.address,
-  //       paymasterAndData: paymaster.address
-  //     }, ethersSigner, entryPoint)
-  //     await expect(entryPoint.callStatic.simulateValidation(userOp)).to.be.revertedWith('paymasterAndData must specify token')
-  //   })
-  //
-  //   it('should fail with wrong token', async () => {
-  //     const userOp = await fillAndSign({
-  //       sender: account.address,
-  //       paymasterAndData: hexConcat([paymaster.address, hexZeroPad('0x1234', 20)])
-  //     }, ethersSigner, entryPoint)
-  //     await expect(entryPoint.callStatic.simulateValidation(userOp, { gasPrice })).to.be.revertedWith('DepositPaymaster: unsupported token')
-  //   })
-  //
-  //   it('should reject if no deposit', async () => {
-  //     const userOp = await fillAndSign({
-  //       sender: account.address,
-  //       paymasterAndData: hexConcat([paymaster.address, hexZeroPad(token.address, 20)])
-  //     }, ethersSigner, entryPoint)
-  //     await expect(entryPoint.callStatic.simulateValidation(userOp, { gasPrice })).to.be.revertedWith('DepositPaymaster: deposit too low')
-  //   })
-  //
-  //   it('should reject if deposit is not locked', async () => {
-  //     await paymaster.addDepositFor(token.address, account.address, ONE_ETH)
-  //
-  //     const paymasterUnlock = await paymaster.populateTransaction.unlockTokenDeposit().then(tx => tx.data!)
-  //     await account.execute(paymaster.address, 0, paymasterUnlock)
-  //
-  //     const userOp = await fillAndSign({
-  //       sender: account.address,
-  //       paymasterAndData: hexConcat([paymaster.address, hexZeroPad(token.address, 20)])
-  //     }, ethersSigner, entryPoint)
-  //     await expect(entryPoint.callStatic.simulateValidation(userOp, { gasPrice })).to.be.revertedWith('not locked')
-  //   })
-  //
-  //   it('succeed with valid deposit', async () => {
-  //     // needed only if previous test did unlock.
-  //     const paymasterLockTokenDeposit = await paymaster.populateTransaction.lockTokenDeposit().then(tx => tx.data!)
-  //     await account.execute(paymaster.address, 0, paymasterLockTokenDeposit)
-  //
-  //     const userOp = await fillAndSign({
-  //       sender: account.address,
-  //       paymasterAndData: hexConcat([paymaster.address, hexZeroPad(token.address, 20)])
-  //     }, ethersSigner, entryPoint)
-  //     await entryPoint.callStatic.simulateValidation(userOp).catch(simulationResultCatch)
-  //   })
-  // })
-  // describe('#handleOps', () => {
-  //   let account: SimpleAccount
-  //   const accountOwner = createAccountOwner()
-  //   let counter: TestCounter
-  //   let callData: string
-  //   before(async () => {
-  //     ({ proxy: account } = await createAccount(ethersSigner, await accountOwner.getAddress(), entryPoint.address))
-  //     counter = await new TestCounter__factory(ethersSigner).deploy()
-  //     const counterJustEmit = await counter.populateTransaction.justemit().then(tx => tx.data!)
-  //     callData = await account.populateTransaction.execute(counter.address, 0, counterJustEmit).then(tx => tx.data!)
-  //
-  //     await paymaster.addDepositFor(token.address, account.address, ONE_ETH)
-  //   })
-  //   it('should pay with deposit (and revert user\'s call) if user can\'t pay with tokens', async () => {
-  //     const beneficiary = createAddress()
-  //     const userOp = await fillAndSign({
-  //       sender: account.address,
-  //       paymasterAndData: hexConcat([paymaster.address, hexZeroPad(token.address, 20)]),
-  //       callData
-  //     }, accountOwner, entryPoint)
-  //
-  //     await entryPoint.handleAggregatedOps(userOpsWithoutAgg([userOp]), beneficiary)
-  //
-  //     const [log] = await entryPoint.queryFilter(entryPoint.filters.UserOperationEvent())
-  //     expect(log.args.success).to.eq(false)
-  //     expect(await counter.queryFilter(counter.filters.CalledFrom())).to.eql([])
-  //     expect(await ethers.provider.getBalance(beneficiary)).to.be.gt(0)
-  //   })
-  //
-  //   it('should pay with tokens if available', async () => {
-  //     const beneficiary = createAddress()
-  //     const beneficiary1 = createAddress()
-  //     const initialTokens = parseEther('1')
-  //     await token.mint(account.address, initialTokens)
-  //
-  //     // need to "approve" the paymaster to use the tokens. we issue a UserOp for that (which uses the deposit to execute)
-  //     const tokenApprovePaymaster = await token.populateTransaction.approve(paymaster.address, ethers.constants.MaxUint256).then(tx => tx.data!)
-  //     const execApprove = await account.populateTransaction.execute(token.address, 0, tokenApprovePaymaster).then(tx => tx.data!)
-  //     const userOp1 = await fillAndSign({
-  //       sender: account.address,
-  //       paymasterAndData: hexConcat([paymaster.address, hexZeroPad(token.address, 20)]),
-  //       callData: execApprove
-  //     }, accountOwner, entryPoint)
-  //     await entryPoint.handleAggregatedOps(userOpsWithoutAgg([userOp1]), beneficiary1)
-  //
-  //     const userOp = await fillAndSign({
-  //       sender: account.address,
-  //       paymasterAndData: hexConcat([paymaster.address, hexZeroPad(token.address, 20)]),
-  //       callData
-  //     }, accountOwner, entryPoint)
-  //     await entryPoint.handleAggregatedOps(userOpsWithoutAgg([userOp]), beneficiary)
-  //
-  //     const [log] = await entryPoint.queryFilter(entryPoint.filters.UserOperationEvent(), await ethers.provider.getBlockNumber())
-  //     expect(log.args.success).to.eq(true)
-  //     const charge = log.args.actualGasCost
-  //     expect(await ethers.provider.getBalance(beneficiary)).to.eq(charge)
-  //
-  //     const targetLogs = await counter.queryFilter(counter.filters.CalledFrom())
-  //     expect(targetLogs.length).to.eq(1)
-  //   })
-  // })
 })
