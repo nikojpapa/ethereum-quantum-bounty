@@ -69,6 +69,11 @@ describe('QuantumBounty', () => {
       it('should set the bounty as solved', async () => {
         expect(await bounty.solved()).to.equal(true)
       })
+
+      it('should revert deposits if already solved', async () => {
+        const tx = bounty.addToBounty({ value: arbitraryBountyAmount })
+        await expect(tx).to.be.revertedWith('Already solved')
+      })
     })
 
     describe('Incorrect Signatures', () => {

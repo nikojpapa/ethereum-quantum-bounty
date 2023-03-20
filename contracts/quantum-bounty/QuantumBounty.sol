@@ -14,9 +14,11 @@ contract QuantumBounty {
     constructor(address[10] memory publicKeys) {
         bounty = 0;
         locks = publicKeys;
+        solved = false;
     }
 
     function addToBounty() public payable {
+        require(!solved, 'Already solved');
         bounty += msg.value;
     }
 
