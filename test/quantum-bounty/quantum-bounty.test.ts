@@ -105,7 +105,7 @@ describe('QuantumBounty', () => {
   })
 
   describe('Lock generation', () => {
-    it('should set locks', async () => {
+    it('should set locks as publicly available', async () => {
       for (let i = 0; i < signers.length; i++) {
         const expectedPublicKey = publicKeys[i]
         const bountyLock = await bounty.locks(i)
