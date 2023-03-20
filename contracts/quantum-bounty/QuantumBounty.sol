@@ -29,18 +29,26 @@ contract QuantumBounty {
     }
 
     function widthdraw(bytes32 message, bytes[10] memory signatures) public {
+        _assertSignaturesMatchLocks(message, signatures);
+        solved = true;
+        _sendBountyToSolver();
+    }
+
+    function _assertSignaturesMatchLocks(bytes32 message, bytes[10] memory signatures) private {
         for (uint8 i = 0; i < locks.length; i++) {
             address lock = locks[i];
             bytes memory signature = signatures[i];
-
-            bool success = message
-                .toEthSignedMessageHash()
-                .recover(signature) == lock;
-
-            require(success, 'Invalid signatures');
+            require(_getAddressFromSignature(message, signature) == lock, 'Invalid signatures');
         }
+    }
 
-        solved = true;
+    function _getAddressFromSignature(bytes32 message, bytes memory signature) private returns (address) {
+        return message
+            .toEthSignedMessageHash()
+            .recover(signature);
+    }
+
+    function _sendBountyToSolver() private {
         uint256 winnings = bounty;
         bounty = 0;
         msg.sender.call{value: winnings}("");
