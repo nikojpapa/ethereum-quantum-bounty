@@ -9,6 +9,7 @@ contract QuantumBounty {
 
     uint256 public bounty;
     address [10] public locks;
+    bool public solved;
 
     constructor(address[10] memory publicKeys) {
         bounty = 0;
@@ -45,6 +46,7 @@ contract QuantumBounty {
 
         require(signaturesConfirmed, 'Invalid signatures');
 
+        solved = true;
         uint256 winnings = bounty;
         bounty = 0;
         payable(msg.sender).call{value: winnings}("");

@@ -66,9 +66,9 @@ describe('QuantumBounty', () => {
         expect(newBalance).to.equal(expectedBalance)
       })
 
-      // it('should set the bounty as solved', async () => {
-      //   expect(true).to.equal(false)
-      // })
+      it('should set the bounty as solved', async () => {
+        expect(await bounty.solved()).to.equal(true)
+      })
     })
 
     describe('Incorrect Signatures', () => {
@@ -93,9 +93,9 @@ describe('QuantumBounty', () => {
         expect(newBalance).to.equal(previousBalance)
       })
 
-      // it('should keep the bounty as unsolved', async () => {
-      //   expect(true).to.equal(false)
-      // })
+      it('should keep the bounty as unsolved', async () => {
+        expect(await bounty.solved()).to.equal(false)
+      })
     })
   })
 
