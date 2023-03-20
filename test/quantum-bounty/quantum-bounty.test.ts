@@ -1,8 +1,8 @@
 import '../aa.init'
-import { ethers } from 'hardhat'
+import { ethers, web3 } from 'hardhat'
 import { expect } from 'chai'
 import { QuantumBounty, QuantumBounty__factory } from '../../typechain'
-import { address, bytes, bytes32 } from '../solidityTypes'
+import { address } from '../solidityTypes'
 import { BigNumber } from 'ethers'
 import { JsonRpcSigner } from '@ethersproject/providers/src.ts/json-rpc-provider'
 
@@ -29,25 +29,25 @@ describe('QuantumBounty', () => {
     const arbitraryBountyAmount = BigNumber.from(100)
     let arbitraryUser: JsonRpcSigner
     let previousBalance: BigNumber
-    let message: bytes32
+    let message: string
 
     before(async () => {
       arbitraryUser = ethers.provider.getSigner(1)
-      previousBalance = await arbitraryUser.getBalance()
-
-      message = ethers.utils.formatBytes32String('arbitrary')
+      message = web3.utils.sha3('arbitrary') as string
     })
 
     beforeEach(async () => {
+      previousBalance = await arbitraryUser.getBalance()
       await bounty.addToBounty({ value: arbitraryBountyAmount })
     })
 
     describe('Correct Signatures', () => {
-      let signatures: bytes[]
-      let gasUsed: BigNumber
+      let signatures: string[]
+      let gasUsed: BigNumber = BigNumber.from(0)
 
       before(async () => {
-        signatures = await Promise.all(signers.map(async (signer) => await signer.signMessage(message)))
+        signatures = await Promise.all(signers.map(async (signer) =>
+          await web3.eth.sign(message, await signer.getAddress())))
       })
 
       beforeEach(async () => {
@@ -72,10 +72,11 @@ describe('QuantumBounty', () => {
     })
 
     describe('Incorrect Signatures', () => {
-      let signatures: bytes[]
+      let signatures: string[]
 
       before(async () => {
-        signatures = await Promise.all(signers.map(async (_) => await arbitraryUser.signMessage(message)))
+        signatures = await Promise.all(signers.map(async (_) =>
+          await web3.eth.sign(message, await arbitraryUser.getAddress())))
       })
 
       beforeEach(async () => {
