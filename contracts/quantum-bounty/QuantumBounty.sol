@@ -29,7 +29,6 @@ contract QuantumBounty {
     }
 
     function widthdraw(bytes32 message, bytes[10] memory signatures) public {
-        bool signaturesConfirmed = true;
         for (uint8 i = 0; i < locks.length; i++) {
             address lock = locks[i];
             bytes memory signature = signatures[i];
@@ -38,17 +37,12 @@ contract QuantumBounty {
                 .toEthSignedMessageHash()
                 .recover(signature) == lock;
 
-            if (!success) {
-                signaturesConfirmed = false;
-                break;
-            }
+            require(success, 'Invalid signatures');
         }
-
-        require(signaturesConfirmed, 'Invalid signatures');
 
         solved = true;
         uint256 winnings = bounty;
         bounty = 0;
-        payable(msg.sender).call{value: winnings}("");
+        msg.sender.call{value: winnings}("");
     }
 }
