@@ -12,9 +12,7 @@ contract QuantumBounty {
     bool public solved;
 
     constructor(address[10] memory publicKeys) {
-        bounty = 0;
         locks = publicKeys;
-        solved = false;
     }
 
     function addToBounty() public payable {
