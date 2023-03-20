@@ -38,11 +38,11 @@ contract QuantumBounty {
         for (uint8 i = 0; i < locks.length; i++) {
             address lock = locks[i];
             bytes memory signature = signatures[i];
-            require(_getAddressFromSignature(message, signature) == lock, 'Invalid signatures');
+            require(_getSignerAddress(message, signature) == lock, 'Invalid signatures');
         }
     }
 
-    function _getAddressFromSignature(bytes32 message, bytes memory signature) private returns (address) {
+    function _getSignerAddress(bytes32 message, bytes memory signature) private returns (address) {
         return message
             .toEthSignedMessageHash()
             .recover(signature);
