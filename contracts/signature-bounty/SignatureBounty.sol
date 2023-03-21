@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/utils/Address.sol";
 contract SignatureBounty {
     using ECDSA for bytes32;
 
-    uint256 public bounty;
     address [10] public locks;
     bool public solved;
 
@@ -35,20 +34,18 @@ contract SignatureBounty {
         }
     }
 
-    function _getSignerAddress(bytes32 message, bytes memory signature) pure private returns (address) {
+    function _getSignerAddress(bytes32 message, bytes memory signature) private pure returns (address) {
         return message
             .toEthSignedMessageHash()
             .recover(signature);
     }
 
     function _sendBountyToSolver() private {
-        uint256 winnings = bounty;
-        bounty = 0;
-        Address.sendValue(payable(msg.sender), winnings);
+        Address.sendValue(payable(msg.sender), bounty());
     }
 
-    function addToBounty() public payable requireUnsolved {
-        bounty += msg.value;
+    function bounty() public view returns (uint256) {
+        return address(this).balance;
     }
 
     receive() external payable {
@@ -57,5 +54,8 @@ contract SignatureBounty {
 
     fallback() external payable {
         addToBounty();
+    }
+
+    function addToBounty() public payable requireUnsolved {
     }
 }
