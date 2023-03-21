@@ -7,12 +7,13 @@ import { BigNumber } from 'ethers'
 import { JsonRpcSigner } from '@ethersproject/providers/src.ts/json-rpc-provider'
 
 describe('SignatureBounty', () => {
-  let bounty: SignatureBounty
+  const numberOfLocks = 3
   const signers: JsonRpcSigner[] = []
   const publicKeys: address[] = []
+  let bounty: SignatureBounty
 
   before(async () => {
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < numberOfLocks; i++) {
       signers.push(ethers.provider.getSigner(i))
     }
     for (const signer of signers) {
