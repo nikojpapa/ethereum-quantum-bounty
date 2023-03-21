@@ -13,11 +13,12 @@ import {
   getBalance,
   isDeployed,
   ONE_ETH,
-  createAccount, HashZero
+  HashZero
 } from '../testutils'
 import { fillUserOpDefaults, getUserOpHash, packUserOp, signUserOp } from '../UserOp'
 import { parseEther } from 'ethers/lib/utils'
 import { UserOperation } from '../UserOperation'
+import { createAccount } from './testutils'
 
 describe('BountyFallbackAccount', function () {
   const entryPoint = '0x'.padEnd(42, '2')
@@ -86,7 +87,7 @@ describe('BountyFallbackAccount', function () {
       await ret.wait()
     })
 
-    it('should pay', async () => {
+    it.only('should pay', async () => {
       const postBalance = await getBalance(account.address)
       expect(preBalance - postBalance).to.eql(expectedPay)
     })
