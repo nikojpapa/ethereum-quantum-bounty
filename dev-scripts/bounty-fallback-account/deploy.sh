@@ -1,0 +1,1 @@
+hardhat deploy --tags BountyFallbackAccount
