@@ -15,20 +15,12 @@ contract QuantumBounty {
         locks = publicKeys;
     }
 
-    function addToBounty() public payable {
+    modifier requireUnsolved() {
         require(!solved, 'Already solved');
-        bounty += msg.value;
+        _;
     }
 
-    receive() external payable {
-        addToBounty();
-    }
-
-    fallback() external payable {
-        addToBounty();
-    }
-
-    function widthdraw(bytes32 message, bytes[10] memory signatures) public {
+    function widthdraw(bytes32 message, bytes[10] memory signatures) public requireUnsolved {
         _assertSignaturesMatchLocks(message, signatures);
         solved = true;
         _sendBountyToSolver();
@@ -51,6 +43,18 @@ contract QuantumBounty {
     function _sendBountyToSolver() private {
         uint256 winnings = bounty;
         bounty = 0;
-        msg.sender.call{value: winnings}("");
+        msg.sender.call{value: winnings}('');
+    }
+
+    function addToBounty() public payable requireUnsolved {
+        bounty += msg.value;
+    }
+
+    receive() external payable {
+        addToBounty();
+    }
+
+    fallback() external payable {
+        addToBounty();
     }
 }

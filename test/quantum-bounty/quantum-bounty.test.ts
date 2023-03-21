@@ -74,6 +74,11 @@ describe('QuantumBounty', () => {
         const tx = bounty.addToBounty({ value: arbitraryBountyAmount })
         await expect(tx).to.be.revertedWith('Already solved')
       })
+
+      it('should not allow further solve attempts if already solved', async () => {
+        const tx = bounty.connect(arbitraryUser).widthdraw(message, signatures)
+        await expect(tx).to.be.revertedWith('Already solved')
+      })
     })
 
     describe('Incorrect Signatures', () => {
