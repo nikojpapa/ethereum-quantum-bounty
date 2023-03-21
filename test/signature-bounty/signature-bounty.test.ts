@@ -1,13 +1,13 @@
 import '../aa.init'
 import { ethers, web3 } from 'hardhat'
 import { expect } from 'chai'
-import { QuantumBounty, QuantumBounty__factory } from '../../typechain'
+import { SignatureBounty, SignatureBounty__factory } from '../../typechain'
 import { address } from '../solidityTypes'
 import { BigNumber } from 'ethers'
 import { JsonRpcSigner } from '@ethersproject/providers/src.ts/json-rpc-provider'
 
-describe('QuantumBounty', () => {
-  let bounty: QuantumBounty
+describe('SignatureBounty', () => {
+  let bounty: SignatureBounty
   const signers: JsonRpcSigner[] = []
   const publicKeys: address[] = []
 
@@ -22,7 +22,7 @@ describe('QuantumBounty', () => {
 
   beforeEach(async () => {
     const ethersSigner = ethers.provider.getSigner()
-    bounty = await new QuantumBounty__factory(ethersSigner).deploy(publicKeys)
+    bounty = await new SignatureBounty__factory(ethersSigner).deploy(publicKeys)
   })
 
   describe('Withdraw', () => {

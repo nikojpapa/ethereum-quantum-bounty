@@ -2,9 +2,10 @@
 pragma solidity ^0.8.12;
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 
-contract QuantumBounty {
+contract SignatureBounty {
     using ECDSA for bytes32;
 
     uint256 public bounty;
@@ -26,7 +27,7 @@ contract QuantumBounty {
         _sendBountyToSolver();
     }
 
-    function _assertSignaturesMatchLocks(bytes32 message, bytes[10] memory signatures) private {
+    function _assertSignaturesMatchLocks(bytes32 message, bytes[10] memory signatures) private view {
         for (uint8 i = 0; i < locks.length; i++) {
             address lock = locks[i];
             bytes memory signature = signatures[i];
@@ -34,7 +35,7 @@ contract QuantumBounty {
         }
     }
 
-    function _getSignerAddress(bytes32 message, bytes memory signature) private returns (address) {
+    function _getSignerAddress(bytes32 message, bytes memory signature) pure private returns (address) {
         return message
             .toEthSignedMessageHash()
             .recover(signature);
@@ -43,7 +44,7 @@ contract QuantumBounty {
     function _sendBountyToSolver() private {
         uint256 winnings = bounty;
         bounty = 0;
-        msg.sender.call{value: winnings}('');
+        Address.sendValue(payable(msg.sender), winnings);
     }
 
     function addToBounty() public payable requireUnsolved {
