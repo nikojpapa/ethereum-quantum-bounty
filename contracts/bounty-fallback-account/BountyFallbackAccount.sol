@@ -25,4 +25,3 @@ contract BountyFallbackAccount is SimpleAccount {
         return 0;
     }
 }
-

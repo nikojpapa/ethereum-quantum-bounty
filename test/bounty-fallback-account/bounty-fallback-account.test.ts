@@ -15,10 +15,11 @@ import {
   ONE_ETH,
   HashZero
 } from '../testutils'
-import { fillUserOpDefaults, getUserOpHash, packUserOp, signUserOp } from '../UserOp'
+import { fillUserOpDefaults, getUserOpHash, packUserOp } from '../UserOp'
 import { parseEther } from 'ethers/lib/utils'
 import { UserOperation } from '../UserOperation'
 import { createAccount } from './testutils'
+import { signUserOp } from './userOp'
 
 describe('BountyFallbackAccount', function () {
   const entryPoint = '0x'.padEnd(42, '2')
