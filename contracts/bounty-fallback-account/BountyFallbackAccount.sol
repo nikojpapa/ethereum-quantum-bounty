@@ -2,6 +2,7 @@
 pragma solidity ^0.8.12;
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 import "../samples/SimpleAccount.sol";
@@ -28,7 +29,7 @@ contract BountyFallbackAccount is SimpleAccount {
         bytes32 hash = userOpHash.toEthSignedMessageHash();
         uint256 hashInt = uint256(hash);
 
-        bytes[] memory checks;
+        bytes[] memory checks = new bytes[](testSizeInBytes);
         for (uint8 i = 0; i < numberOfTests; i++) {
             bytes memory signature_test_value = BytesLib.slice(userOp.signature, testSizeInBytes * i, testSizeInBytes);
             bytes32 valueToTest = keccak256(signature_test_value);
@@ -44,21 +45,5 @@ contract BountyFallbackAccount is SimpleAccount {
         }
 
         return 0;
-
-//        uint256[8] memory signature;
-//        for (uint8 i = 0; i < numberOfTests; i++) {
-//            require(false, 'pick eggs 3');
-//            signature[i] = BytesLib.toUint32(userOp.signature, (numberSizeBytes * BITS_PER_BYTE) * i);
-//        }
-//
-//        for (uint8 j = 0; j < numberOfTests; j++) {
-//            require(false, 'pick eggs 2');
-//            uint256 b = (hashInt >> j) & 1;
-//            require(lamportKey[b][j] != signature[j], 'pick eggs');
-//            uint256 check = signature[j];
-//            if (lamportKey[b][j] != check) {
-//                return SIG_VALIDATION_FAILED;
-//            }
-//        }
     }
 }
