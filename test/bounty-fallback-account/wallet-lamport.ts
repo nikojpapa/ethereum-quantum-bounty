@@ -3,8 +3,8 @@ import { hashMessage, keygen, signMessageLamport } from './lamport-utils'
 
 export class WalletLamport {
   readonly baseWallet: Wallet
-  readonly publicKeyLamport: number[][]
-  readonly secretKeyLamport: number[][]
+  readonly publicKeyLamport: Buffer[][]
+  readonly secretKeyLamport: Buffer[][]
 
   constructor (baseWallet: Wallet) {
     this.baseWallet = baseWallet
@@ -14,7 +14,7 @@ export class WalletLamport {
     this.secretKeyLamport = secretKeyLamport
   }
 
-  public signMessageLamport (message: Buffer): number[] {
+  public signMessageLamport (message: Buffer): Buffer {
     return signMessageLamport(message, this.secretKeyLamport)
   }
 }

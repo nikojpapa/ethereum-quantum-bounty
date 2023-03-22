@@ -17,7 +17,7 @@ export function createAccountOwnerLamport (): WalletLamport {
 export async function createAccountLamport (
   ethersSigner: Signer,
   accountOwner: string,
-  lamportKey: number[][],
+  lamportKey: Buffer[][],
   entryPoint: string,
   _factory?: BountyFallbackAccountFactory
 ):

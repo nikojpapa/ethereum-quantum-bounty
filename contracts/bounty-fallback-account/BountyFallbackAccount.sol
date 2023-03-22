@@ -8,18 +8,18 @@ import "../samples/SimpleAccount.sol";
 
 contract BountyFallbackAccount is SimpleAccount {
     using ECDSA for bytes32;
-    uint256[][] lamportKey;
-
-
-    uint8 numberOfTests = 8;
-    uint8 numberSizeBytes = 4;
-    uint8 BITS_PER_BYTE = 8;
+    bytes[][] lamportKey;
+    uint256 numberOfTests;
+    uint256 testSizeInBytes;
 
     constructor(IEntryPoint anEntryPoint) SimpleAccount(anEntryPoint) {
     }
 
-    function initialize(address anOwner, uint256[][] memory publicKey) public initializer {
+    function initialize(address anOwner, bytes[][] memory publicKey) public initializer {
         lamportKey = publicKey;
+        numberOfTests = publicKey[0].length;
+        testSizeInBytes = publicKey[0][0].length;
+
         SimpleAccount.initialize(anOwner);
     }
 
@@ -28,17 +28,22 @@ contract BountyFallbackAccount is SimpleAccount {
         bytes32 hash = userOpHash.toEthSignedMessageHash();
         uint256 hashInt = uint256(hash);
 
-        uint256[8] memory checks;
-        for (uint8 i = 0; i < 8; i++) {
-            signature_test_value = userOp.signature[2 + numberSizeBytes * i:numberSizeBytes];
-            checks[i] = keccak256(signature)[2:numberSizeBytes];
+        bytes[] memory checks;
+        for (uint8 i = 0; i < numberOfTests; i++) {
+            bytes memory signature_test_value = BytesLib.slice(userOp.signature, testSizeInBytes * i, testSizeInBytes);
+            bytes32 valueToTest = keccak256(signature_test_value);
+            bytes memory valueToTestInBytesFromBytes32 = abi.encodePacked(valueToTest);
+            checks[i] = BytesLib.slice(valueToTestInBytesFromBytes32, 0, testSizeInBytes);
         }
 
-        for (uint8 i = 0; i < 8; i++) {
+        for (uint8 i = 0; i < numberOfTests; i++) {
             uint256 b = (hashInt >> i) & 1;
-            uint256 check = signature[i];
-            require(lamportKey[b][i] == check, 'Invalid signature');
+            bytes memory check = checks[i];
+            require(BytesLib.equal(lamportKey[b][i], check), 'Invalid signature');
+//            return SIG_VALIDATION_FAILED;
         }
+
+        return 0;
 
 //        uint256[8] memory signature;
 //        for (uint8 i = 0; i < numberOfTests; i++) {
