@@ -48,7 +48,7 @@ export function keygen (): number[][][] {
   return [secret_keys, public_keys]
 }
 
-export function signMessageLamport (hashedMessage: Buffer, secretKeys: number[][]): number[] {
+export function signMessageLamport (hashedMessage: Buffer, secretKeys: number[][]): Buffer {
   const sig = []
   for (let x = 0; x < numberOfTests; x++) {
     sig.push(0)
@@ -57,10 +57,10 @@ export function signMessageLamport (hashedMessage: Buffer, secretKeys: number[][
   const hashedMessageInt = parseInt(hashedMessage.toString('hex'), 16)
   for (let i = 0; i < numberOfTests; i++) {
     const b = (hashedMessageInt >> i) & 1
-    sig[i] = secretKeys[b][i]
+    sig[i] = secretKeys[b][i].toString(16)
   }
 
-  return sig
+  return Buffer.from(sig.join(''))
 }
 
 function verify (hashedMessage: Buffer, sig: number[], pk: number[][]): boolean {

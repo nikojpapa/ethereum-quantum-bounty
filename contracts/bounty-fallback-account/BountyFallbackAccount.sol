@@ -10,6 +10,11 @@ contract BountyFallbackAccount is SimpleAccount {
     using ECDSA for bytes32;
     uint256[][] lamportKey;
 
+
+    uint8 numberOfTests = 8;
+    uint8 numberSizeBytes = 4;
+    uint8 BITS_PER_BYTE = 8;
+
     constructor(IEntryPoint anEntryPoint) SimpleAccount(anEntryPoint) {
     }
 
@@ -23,19 +28,32 @@ contract BountyFallbackAccount is SimpleAccount {
         bytes32 hash = userOpHash.toEthSignedMessageHash();
         uint256 hashInt = uint256(hash);
 
-        uint256[256] memory signature;
-        for (uint8 i = 0; i < 256; i++) {
-            signature[i] = BytesLib.toUint256(userOp.signature, 0);
+        uint256[8] memory checks;
+        for (uint8 i = 0; i < 8; i++) {
+            signature_test_value = userOp.signature[2 + numberSizeBytes * i:numberSizeBytes];
+            checks[i] = keccak256(signature)[2:numberSizeBytes];
         }
 
-        for (uint8 i = 0; i < 256; i++) {
+        for (uint8 i = 0; i < 8; i++) {
             uint256 b = (hashInt >> i) & 1;
             uint256 check = signature[i];
-            if (lamportKey[b][i] != check) {
-                return SIG_VALIDATION_FAILED;
-            }
+            require(lamportKey[b][i] == check, 'Invalid signature');
         }
 
-        return 0;
+//        uint256[8] memory signature;
+//        for (uint8 i = 0; i < numberOfTests; i++) {
+//            require(false, 'pick eggs 3');
+//            signature[i] = BytesLib.toUint32(userOp.signature, (numberSizeBytes * BITS_PER_BYTE) * i);
+//        }
+//
+//        for (uint8 j = 0; j < numberOfTests; j++) {
+//            require(false, 'pick eggs 2');
+//            uint256 b = (hashInt >> j) & 1;
+//            require(lamportKey[b][j] != signature[j], 'pick eggs');
+//            uint256 check = signature[j];
+//            if (lamportKey[b][j] != check) {
+//                return SIG_VALIDATION_FAILED;
+//            }
+//        }
     }
 }
