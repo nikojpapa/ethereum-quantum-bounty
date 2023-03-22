@@ -1,8 +1,11 @@
 import { randomBytes } from 'crypto'
 import { arrayify, keccak256 } from 'ethers/lib/utils'
 import { keccak256 as keccak256_buffer } from 'ethereumjs-util/dist/hash'
+import { Buffer } from 'buffer'
 
 // inspiration from https://zacharyratliff.org/Lamport-Signatures/
+
+const BITS_PER_BYTE = 8
 
 const numberOfTests = 4
 const numberSizeBytes = 4
@@ -36,11 +39,26 @@ export function keygen (): Buffer[][][] {
 export function signMessageLamport (hashedMessage: Buffer, secretKeys: Buffer[][]): Buffer {
   const sig: Buffer[] = []
 
-  const hashedMessageInt = parseInt(hashedMessage.toString('hex'), 16)
-  for (let i = 0; i < numberOfTests; i++) {
-    const b = (hashedMessageInt >> i) & 1
-    sig.push(secretKeys[b][i])
+  const bits = []
+  let i = 0
+  while (bits.length < numberOfTests) {
+    const byteInt = hashedMessage.readUInt8(hashedMessage.byteLength - i - 1)
+    for (let j = 0; j < BITS_PER_BYTE; j++) {
+      const b = (byteInt >> j) & 1
+      bits.push(b)
+    }
+    ++i
   }
+
+  for (const bit of bits.slice(0, numberOfTests)) {
+    sig.push(secretKeys[bit][i])
+  }
+
+  // const hashedMessageInt = parseInt(hashedMessage.toString('hex'), 16)
+  // for (let i = 0; i < numberOfTests; i++) {
+  //   const b = (hashedMessageInt >> i) & 1
+  //   sig.push(secretKeys[b][i])
+  // }
 
   return Buffer.concat(sig)
 }
