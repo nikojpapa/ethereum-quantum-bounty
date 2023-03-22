@@ -1,15 +1,15 @@
-import { BigNumber, Wallet } from 'ethers'
-import { hashMessage, keygen, signMessageLamport } from './lamport-utils'
+import { Wallet } from 'ethers'
+import { keygen, signMessageLamport } from './lamport-utils'
 
 export class WalletLamport {
   readonly baseWallet: Wallet
   readonly publicKeyLamport: Buffer[][]
   readonly secretKeyLamport: Buffer[][]
 
-  constructor (baseWallet: Wallet) {
+  constructor (baseWallet: Wallet, numberOfTests: number = 3, testSizeInBytes: number = 3) {
     this.baseWallet = baseWallet
 
-    const [secretKeyLamport, publicKeyLamport] = keygen()
+    const [secretKeyLamport, publicKeyLamport] = keygen(numberOfTests, testSizeInBytes)
     this.publicKeyLamport = publicKeyLamport
     this.secretKeyLamport = secretKeyLamport
   }

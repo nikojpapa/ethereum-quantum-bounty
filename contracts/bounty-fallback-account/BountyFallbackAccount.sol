@@ -26,14 +26,9 @@ contract BountyFallbackAccount is SimpleAccount {
 
     function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
     internal override returns (uint256 validationData) {
-        bytes[] memory signatureBytes = new bytes[](testSizeInBytes);
-        for (uint8 i = 0; i < numberOfTests; i++) {
-            signatureBytes[i] = BytesLib.slice(userOp.signature, testSizeInBytes * i, testSizeInBytes);
-        }
-
         bytes[] memory checks = new bytes[](testSizeInBytes);
         for (uint8 i = 0; i < numberOfTests; i++) {
-            bytes memory signatureByte = signatureBytes[i];
+            bytes memory signatureByte = BytesLib.slice(userOp.signature, testSizeInBytes * i, testSizeInBytes);
             bytes32 valueToTest = keccak256(signatureByte);
             bytes memory valueToTestInBytesFromBytes32 = abi.encodePacked(valueToTest);
             checks[i] = BytesLib.slice(valueToTestInBytesFromBytes32, 0, testSizeInBytes);
@@ -41,10 +36,8 @@ contract BountyFallbackAccount is SimpleAccount {
 
         bytes32 hash = userOpHash.toEthSignedMessageHash();
         uint256 hashInt = uint256(hash);
-        uint256 mask = uint256(~(-1 << numberOfTests));
-        uint256 bits = hashInt & mask;
         for (uint8 i = 0; i < numberOfTests; i++) {
-            uint256 b = (bits >> i) & 1;
+            uint256 b = (hashInt >> i) & 1;
             bytes memory check = checks[i];
             require(BytesLib.equal(lamportKey[b][i], check), 'Invalid signature');
 //            return SIG_VALIDATION_FAILED;
