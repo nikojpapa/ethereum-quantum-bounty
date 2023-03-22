@@ -1,4 +1,3 @@
-import { Wallet } from 'ethers'
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import {
@@ -9,7 +8,6 @@ import {
 } from '../../typechain'
 import {
   createAddress,
-  createAccountOwner,
   getBalance,
   isDeployed,
   ONE_ETH,
@@ -18,14 +16,15 @@ import {
 import { fillUserOpDefaults, getUserOpHash, packUserOp } from '../UserOp'
 import { parseEther } from 'ethers/lib/utils'
 import { UserOperation } from '../UserOperation'
-import { createAccount } from './testutils'
-import { signUserOp } from './userOp'
+import { createAccountLamport, createAccountOwnerLamport } from './testutils'
+import { signUserOpLamport } from './userOp'
+import { WalletLamport } from './wallet-lamport'
 
 describe('BountyFallbackAccount', function () {
   const entryPoint = '0x'.padEnd(42, '2')
   let accounts: string[]
   let testUtil: TestUtil
-  let accountOwner: Wallet
+  let accountOwner: WalletLamport
   const ethersSigner = ethers.provider.getSigner()
 
   before(async function () {
@@ -33,16 +32,16 @@ describe('BountyFallbackAccount', function () {
     // ignore in geth.. this is just a sanity test. should be refactored to use a single-account mode..
     if (accounts.length < 2) this.skip()
     testUtil = await new TestUtil__factory(ethersSigner).deploy()
-    accountOwner = createAccountOwner()
+    accountOwner = createAccountOwnerLamport()
   })
 
   it('owner should be able to call transfer', async () => {
-    const { proxy: account } = await createAccount(ethers.provider.getSigner(), accounts[0], entryPoint)
+    const { proxy: account } = await createAccountLamport(ethers.provider.getSigner(), accounts[0], entryPoint)
     await ethersSigner.sendTransaction({ from: accounts[0], to: account.address, value: parseEther('2') })
     await account.execute(accounts[2], ONE_ETH, '0x')
   })
   it('other account should not be able to call transfer', async () => {
-    const { proxy: account } = await createAccount(ethers.provider.getSigner(), accounts[0], entryPoint)
+    const { proxy: account } = await createAccountLamport(ethers.provider.getSigner(), accounts[0], entryPoint)
     await expect(account.connect(ethers.provider.getSigner(1)).execute(accounts[2], ONE_ETH, '0x'))
       .to.be.revertedWith('account: not Owner or EntryPoint')
   })
@@ -65,14 +64,18 @@ describe('BountyFallbackAccount', function () {
     before(async () => {
       // that's the account of ethersSigner
       const entryPoint = accounts[2];
-      ({ proxy: account } = await createAccount(await ethers.getSigner(entryPoint), accountOwner.address, entryPoint))
+      ({ proxy: account } = await createAccountLamport(
+        await ethers.getSigner(entryPoint),
+        accountOwner.baseWallet.address,
+        accountOwner.publicKeyLamport,
+        entryPoint))
       await ethersSigner.sendTransaction({ from: accounts[0], to: account.address, value: parseEther('0.2') })
       const callGasLimit = 200000
       const verificationGasLimit = 100000
       const maxFeePerGas = 3e9
       const chainId = await ethers.provider.getNetwork().then(net => net.chainId)
 
-      userOp = signUserOp(fillUserOpDefaults({
+      userOp = signUserOpLamport(fillUserOpDefaults({
         sender: account.address,
         callGasLimit,
         verificationGasLimit,
