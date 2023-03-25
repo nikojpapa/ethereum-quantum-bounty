@@ -15,21 +15,37 @@ export function hashMessage (message: string): Buffer {
   return keccak256_buffer(labeledMessage)
 }
 
-export function keygen (numberOfTests: number, testSizeInBytes: number): Buffer[][][] {
-  const secret_keys: Buffer[][] = [[], []]
-  const public_keys: Buffer[][] = [[], []]
+export class LamportKeys {
+  public readonly secretKeys: Buffer[][]
+  public readonly publicKeys: Buffer[][]
+
+  constructor (secretKeys: Buffer[][], publicKeys: Buffer[][]) {
+    this.secretKeys = secretKeys
+    this.publicKeys = publicKeys
+  }
+}
+
+export const DEFAULT_NUMBER_OF_TESTS_LAMPORT = 3
+export const DEFAULT_TEST_SIZE_IN_BYTES_LAMPORT = 3
+
+export function generateLamportKeys (
+  numberOfTests: number = DEFAULT_NUMBER_OF_TESTS_LAMPORT,
+  testSizeInBytes: number = DEFAULT_TEST_SIZE_IN_BYTES_LAMPORT
+): LamportKeys {
+  const secretKeys: Buffer[][] = [[], []]
+  const publicKeys: Buffer[][] = [[], []]
 
   for (let i = 0; i < numberOfTests; i++) {
-    const secret_key_1 = randomBytes(testSizeInBytes)
-    const secret_key_2 = randomBytes(testSizeInBytes)
-    secret_keys[0].push(secret_key_1)
-    secret_keys[1].push(secret_key_2)
+    const secretKey1 = randomBytes(testSizeInBytes)
+    const secretKey2 = randomBytes(testSizeInBytes)
+    secretKeys[0].push(secretKey1)
+    secretKeys[1].push(secretKey2)
 
-    public_keys[0][i] = keccak256_buffer(secret_key_1).slice(0, testSizeInBytes)
-    public_keys[1][i] = keccak256_buffer(secret_key_2).slice(0, testSizeInBytes)
+    publicKeys[0][i] = keccak256_buffer(secretKey1).slice(0, testSizeInBytes)
+    publicKeys[1][i] = keccak256_buffer(secretKey2).slice(0, testSizeInBytes)
   }
 
-  return [secret_keys, public_keys]
+  return new LamportKeys(secretKeys, publicKeys)
 }
 
 export function signMessageLamport (hashedMessage: Buffer, secretKeys: Buffer[][]): Buffer {

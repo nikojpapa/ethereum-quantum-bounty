@@ -39,8 +39,10 @@ contract BountyFallbackAccount is SimpleAccount {
         for (uint8 i = 0; i < numberOfTests; i++) {
             uint256 b = (hashInt >> i) & 1;
             bytes memory check = checks[i];
-            require(BytesLib.equal(lamportKey[b][i], check), 'Invalid signature');
-//            return SIG_VALIDATION_FAILED;
+            if (!BytesLib.equal(lamportKey[b][i], check)) {
+                return SIG_VALIDATION_FAILED;
+            }
+//            require(BytesLib.equal(lamportKey[b][i], check), 'Invalid signature');
         }
 
         return 0;

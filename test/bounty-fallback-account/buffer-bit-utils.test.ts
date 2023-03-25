@@ -3,9 +3,9 @@ import { expect } from 'chai'
 
 describe('BufferBitUtils', () => {
   describe('Reversed Bits', () => {
-    it.only('should return 1 when given a buffer of 5 wanting 2 bits', () => {
+    it('should return 1 when given a buffer of 5 wanting 2 bits', () => {
       const bits = getReversedBits(Buffer.from([5]), 2)
-      expect(bits).to.eql([0, 1])
+      expect(bits).to.eql([1, 0])
     })
   })
 })

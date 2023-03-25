@@ -7,10 +7,11 @@ import {
 } from '../../typechain'
 import { WalletLamport } from './wallet-lamport'
 import { createAccountOwner } from '../testutils'
+import { DEFAULT_NUMBER_OF_TESTS_LAMPORT, DEFAULT_TEST_SIZE_IN_BYTES_LAMPORT } from './lamport-utils'
 
 // create non-random account, so gas calculations are deterministic
-export function createAccountOwnerLamport (): WalletLamport {
-  return new WalletLamport(createAccountOwner())
+export function createAccountOwnerLamport (numberOfTests: number = DEFAULT_NUMBER_OF_TESTS_LAMPORT, testSizeInBytes: number = DEFAULT_TEST_SIZE_IN_BYTES_LAMPORT): WalletLamport {
+  return new WalletLamport(createAccountOwner(), numberOfTests, testSizeInBytes)
 }
 
 // Deploys an implementation and a proxy pointing to this implementation
