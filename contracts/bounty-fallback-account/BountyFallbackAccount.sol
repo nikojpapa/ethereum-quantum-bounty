@@ -26,25 +26,33 @@ contract BountyFallbackAccount is SimpleAccount {
 
     function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
     internal override returns (uint256 validationData) {
+        bytes32 userOpHashEthSigned = userOpHash.toEthSignedMessageHash();
+
+        bytes memory ecdsaSignature = BytesLib.slice(userOp.signature, 0, 65);
+        if (owner != userOpHashEthSigned.recover(ecdsaSignature))
+            return SIG_VALIDATION_FAILED;
+        return 0;
+
         bytes[] memory checks = new bytes[](testSizeInBytes);
         for (uint8 i = 0; i < numberOfTests; i++) {
             bytes memory signatureByte = BytesLib.slice(userOp.signature, testSizeInBytes * i, testSizeInBytes);
             bytes32 valueToTest = keccak256(signatureByte);
-            bytes memory valueToTestInBytesFromBytes32 = abi.encodePacked(valueToTest);
-            checks[i] = BytesLib.slice(valueToTestInBytesFromBytes32, 0, testSizeInBytes);
+            checks[i] = BytesLib.slice(bytes32ToBytes(valueToTest), 0, testSizeInBytes);
         }
 
-        bytes32 hash = userOpHash.toEthSignedMessageHash();
-        uint256 hashInt = uint256(hash);
+        uint256 hashInt = uint256(userOpHashEthSigned);
         for (uint8 i = 0; i < numberOfTests; i++) {
             uint256 b = (hashInt >> i) & 1;
             bytes memory check = checks[i];
-            if (!BytesLib.equal(lamportKey[b][i], check)) {
+            if (!BytesLib.equal(lamportKey[b][i], check))
                 return SIG_VALIDATION_FAILED;
-            }
 //            require(BytesLib.equal(lamportKey[b][i], check), 'Invalid signature');
         }
 
         return 0;
+    }
+
+    function bytes32ToBytes(bytes32 bytesFrom) private pure returns (bytes memory) {
+        return abi.encodePacked(bytesFrom);
     }
 }

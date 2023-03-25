@@ -1,5 +1,5 @@
 import { ethers } from 'hardhat'
-import { expect } from 'chai'
+import { expect, use } from 'chai'
 import {
   BountyFallbackAccount, BountyFallbackAccountFactory,
   BountyFallbackAccountFactory__factory,
@@ -13,12 +13,12 @@ import {
   ONE_ETH,
   HashZero
 } from '../testutils'
-import { fillUserOpDefaults, getUserOpHash, packUserOp } from '../UserOp'
+import { fillUserOpDefaults, getUserOpHash, packUserOp, signUserOp } from '../UserOp'
 import { parseEther } from 'ethers/lib/utils'
 import { UserOperation } from '../UserOperation'
 import {
   createAccountLamport,
-  createAccountOwnerLamport,
+  createAccountOwnerLamport
 } from './testutils-lamport'
 import { signUserOpLamport } from './UserOpLamport'
 import { WalletLamport } from './wallet-lamport'
@@ -68,12 +68,16 @@ describe('BountyFallbackAccount', function () {
 
   describe('#validateUserOp', () => {
     let account: BountyFallbackAccount
-    let userOp: UserOperation
-    let userOpHash: string
+    let userOpLamport: UserOperation
+    let userOpHashLamport: string
+    let userOpNoLamport: UserOperation
+    let userOpHashNoLamport: string
     let preBalance: number
     let expectedPay: number
 
     const actualGasPrice = 1e9
+
+    let nonceTracker = 0
 
     before(async () => {
       // that's the account of ethersSigner
@@ -89,44 +93,108 @@ describe('BountyFallbackAccount', function () {
       const maxFeePerGas = 3e9
       const chainId = await ethers.provider.getNetwork().then(net => net.chainId)
 
-      userOp = signUserOpLamport(fillUserOpDefaults({
+      userOpLamport = signUserOpLamport(fillUserOpDefaults({
         sender: account.address,
         callGasLimit,
         verificationGasLimit,
         maxFeePerGas
       }), accountOwner, entryPoint, chainId)
+      userOpHashLamport = await getUserOpHash(userOpLamport, entryPoint, chainId)
 
-      userOpHash = await getUserOpHash(userOp, entryPoint, chainId)
+      userOpNoLamport = signUserOp(fillUserOpDefaults({
+        sender: account.address,
+        callGasLimit,
+        verificationGasLimit,
+        maxFeePerGas
+      }), accountOwner.baseWallet, entryPoint, chainId)
+      userOpHashNoLamport = await getUserOpHash(userOpLamport, entryPoint, chainId)
 
       expectedPay = actualGasPrice * (callGasLimit + verificationGasLimit)
 
       preBalance = await getBalance(account.address)
-      const ret = await account.validateUserOp(userOp, userOpHash, expectedPay, { gasPrice: actualGasPrice })
-      await ret.wait()
     })
 
-    it('should pay', async () => {
-      const postBalance = await getBalance(account.address)
-      expect(preBalance - postBalance).to.eql(expectedPay)
+    describe.only('before bounty is solved', function () {
+      describe('only ECDS signature sent', () => {
+        before(async () => {
+          const ret = await account.validateUserOp(userOpNoLamport, userOpHashNoLamport, expectedPay, { gasPrice: actualGasPrice })
+          await ret.wait()
+          ++nonceTracker;
+        })
+
+        it('should pay', async () => {
+          const postBalance = await getBalance(account.address)
+          expect(preBalance - postBalance).to.eql(expectedPay)
+        })
+
+        it('should increment nonce', async () => {
+          expect(await account.nonce()).to.equal(1)
+        })
+
+        it('should reject same TX on nonce error', async () => {
+          await expect(account.validateUserOp(userOpNoLamport, userOpHashNoLamport, 0)).to.revertedWith('invalid nonce')
+        })
+
+        it('should return NO_SIG_VALIDATION on wrong signature', async () => {
+          const deadline = await account.callStatic.validateUserOp({ ...userOpNoLamport, nonce: nonceTracker++ }, HashZero, 0)
+          expect(deadline).to.eq(1)
+        })
+      })
+
+      describe('invalid lamport signature included', () => {
+        before(async () => {
+          const signatureWithInvalidLamport = userOpNoLamport.signature + HashZero.slice(2)
+          const ret = await account.validateUserOp({ ...userOpNoLamport, signature: signatureWithInvalidLamport, nonce: nonceTracker++ }, userOpHashNoLamport, expectedPay, { gasPrice: actualGasPrice })
+          await ret.wait()
+        })
+
+        it('should pay', async () => {
+          const postBalance = await getBalance(account.address)
+          expect(preBalance - postBalance).to.eql(expectedPay)
+        })
+
+        it('should return NO_SIG_VALIDATION on wrong signature', async () => {
+          const userOpHash = HashZero
+          const deadline = await account.callStatic.validateUserOp({ ...userOpNoLamport, nonce: nonceTracker++ }, userOpHash, 0)
+          expect(deadline).to.eq(1)
+        })
+      })
     })
 
-    it('should increment nonce', async () => {
-      expect(await account.nonce()).to.equal(1)
-    })
+    describe('after bounty is solved', () => {
+      before(async () => {
+        const ret = await account.validateUserOp(userOpLamport, userOpHashLamport, expectedPay, { gasPrice: actualGasPrice })
+        await ret.wait()
+      })
 
-    it('should reject same TX on nonce error', async () => {
-      await expect(account.validateUserOp(userOp, userOpHash, 0)).to.revertedWith('invalid nonce')
-    })
+      before(async () => {
+        const ret = await account.validateUserOp(userOpLamport, userOpHashLamport, expectedPay, { gasPrice: actualGasPrice })
+        await ret.wait()
+      })
 
-    it('should return NO_SIG_VALIDATION on wrong signature', async () => {
-      const userOpHash = HashZero
-      const deadline = await account.callStatic.validateUserOp({ ...userOp, nonce: 1 }, userOpHash, 0)
-      expect(deadline).to.eq(1)
-    })
+      it('should pay', async () => {
+        const postBalance = await getBalance(account.address)
+        expect(preBalance - postBalance).to.eql(expectedPay)
+      })
 
-    it('should succeed on larger numtests than testsize', () => {
-      createAccountOwnerLamport(4, 3)
-      expect.fail('Using these params when creating an account for the "should pay" test fails')
+      it('should increment nonce', async () => {
+        expect(await account.nonce()).to.equal(1)
+      })
+
+      it('should reject same TX on nonce error', async () => {
+        await expect(account.validateUserOp(userOpLamport, userOpHashLamport, 0)).to.revertedWith('invalid nonce')
+      })
+
+      it('should return NO_SIG_VALIDATION on wrong signature', async () => {
+        const userOpHash = HashZero
+        const deadline = await account.callStatic.validateUserOp({ ...userOpLamport, nonce: 1 }, userOpHash, 0)
+        expect(deadline).to.eq(1)
+      })
+
+      it('should succeed on larger numtests than testsize', () => {
+        createAccountOwnerLamport(4, 3)
+        expect.fail('Using these params when creating an account for the "should pay" test fails')
+      })
     })
   })
   context('BountyFallbackWalletFactory', () => {
