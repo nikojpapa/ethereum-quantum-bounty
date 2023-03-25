@@ -110,16 +110,16 @@ describe('BountyFallbackAccount', function () {
       userOpHashNoLamport = await getUserOpHash(userOpLamport, entryPoint, chainId)
 
       expectedPay = actualGasPrice * (callGasLimit + verificationGasLimit)
-
-      preBalance = await getBalance(account.address)
     })
 
     describe.only('before bounty is solved', function () {
       describe('only ECDS signature sent', () => {
         before(async () => {
+          preBalance = await getBalance(account.address)
+
           const ret = await account.validateUserOp(userOpNoLamport, userOpHashNoLamport, expectedPay, { gasPrice: actualGasPrice })
           await ret.wait()
-          ++nonceTracker;
+          ++nonceTracker
         })
 
         it('should pay', async () => {
@@ -136,16 +136,19 @@ describe('BountyFallbackAccount', function () {
         })
 
         it('should return NO_SIG_VALIDATION on wrong signature', async () => {
-          const deadline = await account.callStatic.validateUserOp({ ...userOpNoLamport, nonce: nonceTracker++ }, HashZero, 0)
+          const deadline = await account.callStatic.validateUserOp({ ...userOpNoLamport, nonce: nonceTracker }, HashZero, 0)
           expect(deadline).to.eq(1)
         })
       })
 
       describe('invalid lamport signature included', () => {
         before(async () => {
+          preBalance = await getBalance(account.address)
+
           const signatureWithInvalidLamport = userOpNoLamport.signature + HashZero.slice(2)
-          const ret = await account.validateUserOp({ ...userOpNoLamport, signature: signatureWithInvalidLamport, nonce: nonceTracker++ }, userOpHashNoLamport, expectedPay, { gasPrice: actualGasPrice })
+          const ret = await account.validateUserOp({ ...userOpNoLamport, signature: signatureWithInvalidLamport, nonce: nonceTracker }, userOpHashNoLamport, expectedPay, { gasPrice: actualGasPrice })
           await ret.wait()
+          ++nonceTracker
         })
 
         it('should pay', async () => {
@@ -155,7 +158,7 @@ describe('BountyFallbackAccount', function () {
 
         it('should return NO_SIG_VALIDATION on wrong signature', async () => {
           const userOpHash = HashZero
-          const deadline = await account.callStatic.validateUserOp({ ...userOpNoLamport, nonce: nonceTracker++ }, userOpHash, 0)
+          const deadline = await account.callStatic.validateUserOp({ ...userOpNoLamport, nonce: nonceTracker }, userOpHash, 0)
           expect(deadline).to.eq(1)
         })
       })
