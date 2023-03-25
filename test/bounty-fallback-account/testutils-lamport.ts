@@ -1,4 +1,4 @@
-import { BigNumber, Signer, Wallet } from 'ethers'
+import { Signer } from 'ethers'
 import {
   BountyFallbackAccount,
   BountyFallbackAccount__factory,
@@ -8,6 +8,7 @@ import {
 import { WalletLamport } from './wallet-lamport'
 import { createAccountOwner } from '../testutils'
 import { DEFAULT_NUMBER_OF_TESTS_LAMPORT, DEFAULT_TEST_SIZE_IN_BYTES_LAMPORT } from './lamport-utils'
+import { address } from '../solidityTypes'
 
 // create non-random account, so gas calculations are deterministic
 export function createAccountOwnerLamport (numberOfTests: number = DEFAULT_NUMBER_OF_TESTS_LAMPORT, testSizeInBytes: number = DEFAULT_TEST_SIZE_IN_BYTES_LAMPORT): WalletLamport {
@@ -19,6 +20,7 @@ export async function createAccountLamport (
   ethersSigner: Signer,
   accountOwner: string,
   lamportKey: Buffer[][],
+  bountyContractAddress: address,
   entryPoint: string,
   _factory?: BountyFallbackAccountFactory
 ):
@@ -29,8 +31,8 @@ export async function createAccountLamport (
   }> {
   const accountFactory = _factory ?? await new BountyFallbackAccountFactory__factory(ethersSigner).deploy(entryPoint)
   const implementation = await accountFactory.accountImplementation()
-  await accountFactory.createAccount(accountOwner, 0, lamportKey)
-  const accountAddress = await accountFactory.getAddress(accountOwner, 0, lamportKey)
+  await accountFactory.createAccount(accountOwner, 0, lamportKey, bountyContractAddress)
+  const accountAddress = await accountFactory.getAddress(accountOwner, 0, lamportKey, bountyContractAddress)
   const proxy = BountyFallbackAccount__factory.connect(accountAddress, ethersSigner)
   return {
     implementation,

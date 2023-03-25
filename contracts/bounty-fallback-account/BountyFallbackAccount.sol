@@ -9,6 +9,8 @@ import "../samples/SimpleAccount.sol";
 
 contract BountyFallbackAccount is SimpleAccount {
     using ECDSA for bytes32;
+
+    address bountyContractAddress;
     bytes[][] lamportKey;
     uint256 numberOfTests;
     uint256 testSizeInBytes;
@@ -16,7 +18,9 @@ contract BountyFallbackAccount is SimpleAccount {
     constructor(IEntryPoint anEntryPoint) SimpleAccount(anEntryPoint) {
     }
 
-    function initialize(address anOwner, bytes[][] memory publicKey) public initializer {
+    function initialize(address anOwner, bytes[][] memory publicKey, address bountyContractAddress) public initializer {
+        bountyContractAddress = bountyContractAddress;
+
         lamportKey = publicKey;
         numberOfTests = publicKey[0].length;
         testSizeInBytes = publicKey[0][0].length;

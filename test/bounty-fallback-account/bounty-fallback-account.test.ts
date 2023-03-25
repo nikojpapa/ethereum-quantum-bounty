@@ -2,7 +2,7 @@ import { ethers } from 'hardhat'
 import { expect, use } from 'chai'
 import {
   BountyFallbackAccount, BountyFallbackAccountFactory,
-  BountyFallbackAccountFactory__factory,
+  BountyFallbackAccountFactory__factory, SignatureBounty, SignatureBounty__factory,
   TestUtil,
   TestUtil__factory
 } from '../../typechain'
@@ -22,7 +22,9 @@ import {
 } from './testutils-lamport'
 import { signUserOpLamport } from './UserOpLamport'
 import { WalletLamport } from './wallet-lamport'
-import { generateLamportKeys } from './lamport-utils'
+import { DEFAULT_NUMBER_OF_TESTS_LAMPORT, generateLamportKeys } from './lamport-utils'
+import { JsonRpcSigner } from '@ethersproject/providers/src.ts/json-rpc-provider'
+import { address } from '../solidityTypes'
 
 describe('BountyFallbackAccount', function () {
   const entryPoint = '0x'.padEnd(42, '2')
@@ -79,13 +81,32 @@ describe('BountyFallbackAccount', function () {
 
     let nonceTracker = 0
 
+    const numberOfBountyLocks = 3
+    const signers: JsonRpcSigner[] = []
+    const publicKeys: address[] = []
+    let bounty: SignatureBounty
+
+    async function setupBountyContract (): Promise<void> {
+      for (let i = 0; i < numberOfBountyLocks; i++) {
+        signers.push(ethers.provider.getSigner(i))
+      }
+      for (const signer of signers) {
+        publicKeys.push(await signer.getAddress())
+      }
+      const ethersSigner = ethers.provider.getSigner()
+      bounty = await new SignatureBounty__factory(ethersSigner).deploy(publicKeys)
+    }
+
     before(async () => {
+      await setupBountyContract()
+
       // that's the account of ethersSigner
       const entryPoint = accounts[2];
       ({ proxy: account } = await createAccountLamport(
         await ethers.getSigner(entryPoint),
         accountOwner.baseWallet.address,
         accountOwner.lamportKeys.publicKeys,
+        bounty.address,
         entryPoint))
       await ethersSigner.sendTransaction({ from: accounts[0], to: account.address, value: parseEther('0.2') })
       const callGasLimit = 200000

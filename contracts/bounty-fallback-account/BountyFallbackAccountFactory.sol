@@ -13,24 +13,24 @@ contract BountyFallbackAccountFactory {
         accountImplementation = new BountyFallbackAccount(_entryPoint);
     }
 
-    function createAccount(address owner, uint256 salt, bytes[][] memory lamportKey) public returns (BountyFallbackAccount ret) {
-        address addr = getAddress(owner, salt, lamportKey);
+    function createAccount(address owner, uint256 salt, bytes[][] memory lamportKey, address bountyContractAddress) public returns (BountyFallbackAccount ret) {
+        address addr = getAddress(owner, salt, lamportKey, bountyContractAddress);
         uint codeSize = addr.code.length;
         if (codeSize > 0) {
             return BountyFallbackAccount(payable(addr));
         }
         ret = BountyFallbackAccount(payable(new ERC1967Proxy{salt : bytes32(salt)}(
                 address(accountImplementation),
-                abi.encodeCall(BountyFallbackAccount.initialize, (owner, lamportKey))
+                abi.encodeCall(BountyFallbackAccount.initialize, (owner, lamportKey, bountyContractAddress))
             )));
     }
 
-    function getAddress(address owner, uint256 salt, bytes[][] memory lamportKey) public view returns (address) {
+    function getAddress(address owner, uint256 salt, bytes[][] memory lamportKey, address bountyContractAddress) public view returns (address) {
         return Create2.computeAddress(bytes32(salt), keccak256(abi.encodePacked(
                 type(ERC1967Proxy).creationCode,
                 abi.encode(
                     address(accountImplementation),
-                    abi.encodeCall(BountyFallbackAccount.initialize, (owner, lamportKey))
+                    abi.encodeCall(BountyFallbackAccount.initialize, (owner, lamportKey, bountyContractAddress))
                 )
             )));
     }
