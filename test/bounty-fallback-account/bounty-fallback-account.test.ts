@@ -19,8 +19,8 @@ import { UserOperation } from '../UserOperation'
 import {
   createAccountLamport,
   createAccountOwnerLamport,
-} from './testutils'
-import { signUserOpLamport } from './userOp'
+} from './testutils-lamport'
+import { signUserOpLamport } from './UserOpLamport'
 import { WalletLamport } from './wallet-lamport'
 import { generateLamportKeys } from './lamport-utils'
 
