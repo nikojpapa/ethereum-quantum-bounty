@@ -133,7 +133,7 @@ describe('BountyFallbackAccount', function () {
       expectedPay = actualGasPrice * (callGasLimit + verificationGasLimit)
     })
 
-    describe.only('before bounty is solved', function () {
+    describe('before bounty is solved', function () {
       describe('only ECDS signature sent', () => {
         before(async () => {
           preBalance = await getBalance(account.address)
