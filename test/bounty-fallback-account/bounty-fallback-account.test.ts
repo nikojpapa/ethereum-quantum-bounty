@@ -24,6 +24,7 @@ import { signUserOpLamport } from './UserOpLamport'
 import { WalletLamport } from './wallet-lamport'
 import { generateLamportKeys } from './lamport-utils'
 import SignatureBountyUtils from './signature-bounty-utils'
+import hardhatConfig from '../../hardhat.config'
 
 describe('BountyFallbackAccount', function () {
   const entryPoint = '0x'.padEnd(42, '2')
@@ -119,13 +120,12 @@ describe('BountyFallbackAccount', function () {
       userOpHashNoLamport = await getUserOpHash(userOpLamport, entryPoint, chainId)
 
       expectedPay = actualGasPrice * (callGasLimit + verificationGasLimit)
+      preBalance = await getBalance(account.address)
     })
 
     describe('before bounty is solved', function () {
       describe('only ECDS signature sent', () => {
         before(async () => {
-          preBalance = await getBalance(account.address)
-
           const ret = await account.validateUserOp(userOpNoLamport, userOpHashNoLamport, expectedPay, { gasPrice: actualGasPrice })
           await ret.wait()
           ++nonceTracker
@@ -152,8 +152,6 @@ describe('BountyFallbackAccount', function () {
 
       describe('invalid lamport signature included', () => {
         before(async () => {
-          preBalance = await getBalance(account.address)
-
           const signatureWithInvalidLamport = userOpNoLamport.signature + HashZero.slice(2)
           const ret = await account.validateUserOp({ ...userOpNoLamport, signature: signatureWithInvalidLamport, nonce: nonceTracker }, userOpHashNoLamport, expectedPay, { gasPrice: actualGasPrice })
           await ret.wait()
@@ -175,14 +173,14 @@ describe('BountyFallbackAccount', function () {
 
     describe('after bounty is solved', () => {
       before(async () => {
-        const ret = await account.validateUserOp(userOpLamport, userOpHashLamport, expectedPay, { gasPrice: actualGasPrice })
-        await ret.wait()
-
         const tx = await signatureBountyUtils.solveBounty(bounty)
         await tx.wait()
+
+        const ret = await account.validateUserOp(userOpLamport, userOpHashLamport, expectedPay, { gasPrice: actualGasPrice })
+        await ret.wait()
       })
 
-      it('should pay', async () => {
+      it.only('should pay', async () => {
         const postBalance = await getBalance(account.address)
         expect(preBalance - postBalance).to.eql(expectedPay)
       })

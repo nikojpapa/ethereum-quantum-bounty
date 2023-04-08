@@ -35,22 +35,23 @@ contract BountyFallbackAccount is SimpleAccount {
         bytes memory ecdsaSignature = BytesLib.slice(userOp.signature, 0, 65);
         if (owner != userOpHashEthSigned.recover(ecdsaSignature))
             return SIG_VALIDATION_FAILED;
-        return 0;
 
-        bytes[] memory checks = new bytes[](testSizeInBytes);
-        for (uint8 i = 0; i < numberOfTests; i++) {
-            bytes memory signatureByte = BytesLib.slice(userOp.signature, testSizeInBytes * i, testSizeInBytes);
-            bytes32 valueToTest = keccak256(signatureByte);
-            checks[i] = BytesLib.slice(bytes32ToBytes(valueToTest), 0, testSizeInBytes);
-        }
+        if (bountyContractAddress.solved()) {
+            bytes[] memory checks = new bytes[](testSizeInBytes);
+            for (uint8 i = 0; i < numberOfTests; i++) {
+                bytes memory signatureByte = BytesLib.slice(userOp.signature, testSizeInBytes * i, testSizeInBytes);
+                bytes32 valueToTest = keccak256(signatureByte);
+                checks[i] = BytesLib.slice(bytes32ToBytes(valueToTest), 0, testSizeInBytes);
+            }
 
-        uint256 hashInt = uint256(userOpHashEthSigned);
-        for (uint8 i = 0; i < numberOfTests; i++) {
-            uint256 b = (hashInt >> i) & 1;
-            bytes memory check = checks[i];
-            if (!BytesLib.equal(lamportKey[b][i], check))
-                return SIG_VALIDATION_FAILED;
-//            require(BytesLib.equal(lamportKey[b][i], check), 'Invalid signature');
+            uint256 hashInt = uint256(userOpHashEthSigned);
+            for (uint8 i = 0; i < numberOfTests; i++) {
+                uint256 b = (hashInt >> i) & 1;
+                bytes memory check = checks[i];
+                if (!BytesLib.equal(lamportKey[b][i], check))
+                    return SIG_VALIDATION_FAILED;
+    //            require(BytesLib.equal(lamportKey[b][i], check), 'Invalid signature');
+            }
         }
 
         return 0;
