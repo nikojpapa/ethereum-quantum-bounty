@@ -1,40 +1,26 @@
 import '../aa.init'
-import { ethers, web3 } from 'hardhat'
+import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { SignatureBounty, SignatureBounty__factory } from '../../typechain'
-import { address } from '../solidityTypes'
+import { SignatureBounty } from '../../typechain'
 import { BigNumber } from 'ethers'
 import { JsonRpcSigner } from '@ethersproject/providers/src.ts/json-rpc-provider'
+import SignatureBountyUtils from '../bounty-fallback-account/signature-bounty-utils'
 
 describe('SignatureBounty', () => {
-  const numberOfLocks = 3
-  const signers: JsonRpcSigner[] = []
-  const publicKeys: address[] = []
+  const signatureBountyUtils = new SignatureBountyUtils()
   let bounty: SignatureBounty
 
-  before(async () => {
-    for (let i = 0; i < numberOfLocks; i++) {
-      signers.push(ethers.provider.getSigner(i))
-    }
-    for (const signer of signers) {
-      publicKeys.push(await signer.getAddress())
-    }
-  })
-
   beforeEach(async () => {
-    const ethersSigner = ethers.provider.getSigner()
-    bounty = await new SignatureBounty__factory(ethersSigner).deploy(publicKeys)
+    bounty = await signatureBountyUtils.deploySignatureBounty()
   })
 
   describe('Withdraw', () => {
     const arbitraryBountyAmount = BigNumber.from(100)
     let arbitraryUser: JsonRpcSigner
     let previousBalance: BigNumber
-    let message: string
 
     before(async () => {
       arbitraryUser = ethers.provider.getSigner(1)
-      message = web3.utils.sha3('arbitrary') as string
     })
 
     beforeEach(async () => {
@@ -43,16 +29,10 @@ describe('SignatureBounty', () => {
     })
 
     describe('Correct Signatures', () => {
-      let signatures: string[]
       let gasUsed: BigNumber = BigNumber.from(0)
 
-      before(async () => {
-        signatures = await Promise.all(signers.map(async (signer) =>
-          await web3.eth.sign(message, await signer.getAddress())))
-      })
-
       beforeEach(async () => {
-        const tx = await bounty.connect(arbitraryUser).widthdraw(message, signatures)
+        const tx = await signatureBountyUtils.solveBounty(bounty)
         const receipt = await tx.wait()
         gasUsed = BigNumber.from(receipt.cumulativeGasUsed).mul(BigNumber.from(receipt.effectiveGasPrice))
       })
@@ -77,21 +57,14 @@ describe('SignatureBounty', () => {
       })
 
       it('should not allow further solve attempts if already solved', async () => {
-        const tx = bounty.connect(arbitraryUser).widthdraw(message, signatures)
+        const tx = await signatureBountyUtils.solveBounty(bounty)
         await expect(tx).to.be.revertedWith('Already solved')
       })
     })
 
     describe('Incorrect Signatures', () => {
-      let signatures: string[]
-
-      before(async () => {
-        signatures = await Promise.all(signers.map(async (_) =>
-          await web3.eth.sign(message, await arbitraryUser.getAddress())))
-      })
-
       beforeEach(async () => {
-        const tx = bounty.connect(arbitraryUser).widthdraw(message, signatures)
+        const tx = await signatureBountyUtils.solveBounty(bounty)
         await expect(tx).to.be.revertedWith('Invalid signatures')
       })
 
@@ -112,8 +85,8 @@ describe('SignatureBounty', () => {
 
   describe('Lock generation', () => {
     it('should set locks as publicly available', async () => {
-      for (let i = 0; i < signers.length; i++) {
-        const expectedPublicKey = publicKeys[i]
+      for (let i = 0; i < signatureBountyUtils.signers.length; i++) {
+        const expectedPublicKey = (await signatureBountyUtils.getPublicKeys())[i]
         const bountyLock = await bounty.locks(i)
         expect(bountyLock).to.equal(expectedPublicKey)
       }

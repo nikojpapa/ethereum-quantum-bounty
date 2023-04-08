@@ -1,8 +1,8 @@
 import { ethers } from 'hardhat'
-import { expect, use } from 'chai'
+import { expect } from 'chai'
 import {
   BountyFallbackAccount, BountyFallbackAccountFactory,
-  BountyFallbackAccountFactory__factory, SignatureBounty, SignatureBounty__factory,
+  BountyFallbackAccountFactory__factory, SignatureBounty,
   TestUtil,
   TestUtil__factory
 } from '../../typechain'
@@ -22,9 +22,8 @@ import {
 } from './testutils-lamport'
 import { signUserOpLamport } from './UserOpLamport'
 import { WalletLamport } from './wallet-lamport'
-import { DEFAULT_NUMBER_OF_TESTS_LAMPORT, generateLamportKeys } from './lamport-utils'
-import { JsonRpcSigner } from '@ethersproject/providers/src.ts/json-rpc-provider'
-import { address } from '../solidityTypes'
+import { generateLamportKeys } from './lamport-utils'
+import SignatureBountyUtils from './signature-bounty-utils'
 
 describe('BountyFallbackAccount', function () {
   const entryPoint = '0x'.padEnd(42, '2')
@@ -32,6 +31,9 @@ describe('BountyFallbackAccount', function () {
   let testUtil: TestUtil
   let accountOwner: WalletLamport
   const ethersSigner = ethers.provider.getSigner()
+
+  const signatureBountyUtils = new SignatureBountyUtils()
+  let bounty: SignatureBounty
 
   before(async function () {
     accounts = await ethers.provider.listAccounts()
@@ -47,7 +49,7 @@ describe('BountyFallbackAccount', function () {
     implementation: string
   }> {
     const keysLamport = generateLamportKeys()
-    return await createAccountLamport(ethers.provider.getSigner(), accounts[0], keysLamport.publicKeys, entryPoint)
+    return await createAccountLamport(ethers.provider.getSigner(), accounts[0], keysLamport.publicKeys, bounty.address, entryPoint)
   }
 
   it('owner should be able to call transfer', async () => {
@@ -81,24 +83,10 @@ describe('BountyFallbackAccount', function () {
 
     let nonceTracker = 0
 
-    const numberOfBountyLocks = 3
-    const signers: JsonRpcSigner[] = []
-    const publicKeys: address[] = []
     let bounty: SignatureBounty
 
-    async function setupBountyContract (): Promise<void> {
-      for (let i = 0; i < numberOfBountyLocks; i++) {
-        signers.push(ethers.provider.getSigner(i))
-      }
-      for (const signer of signers) {
-        publicKeys.push(await signer.getAddress())
-      }
-      const ethersSigner = ethers.provider.getSigner()
-      bounty = await new SignatureBounty__factory(ethersSigner).deploy(publicKeys)
-    }
-
     before(async () => {
-      await setupBountyContract()
+      bounty = await signatureBountyUtils.deploySignatureBounty()
 
       // that's the account of ethersSigner
       const entryPoint = accounts[2];
@@ -189,11 +177,9 @@ describe('BountyFallbackAccount', function () {
       before(async () => {
         const ret = await account.validateUserOp(userOpLamport, userOpHashLamport, expectedPay, { gasPrice: actualGasPrice })
         await ret.wait()
-      })
 
-      before(async () => {
-        const ret = await account.validateUserOp(userOpLamport, userOpHashLamport, expectedPay, { gasPrice: actualGasPrice })
-        await ret.wait()
+        const tx = await signatureBountyUtils.solveBounty(bounty)
+        await tx.wait()
       })
 
       it('should pay', async () => {
@@ -226,9 +212,9 @@ describe('BountyFallbackAccount', function () {
       const ownerAddr = createAddress()
       const lamportKeys = generateLamportKeys()
       const deployer = await new BountyFallbackAccountFactory__factory(ethersSigner).deploy(entryPoint)
-      const target = await deployer.callStatic.createAccount(ownerAddr, 1234, lamportKeys.publicKeys)
+      const target = await deployer.callStatic.createAccount(ownerAddr, 1234, lamportKeys.publicKeys, bounty.address)
       expect(await isDeployed(target)).to.eq(false)
-      await deployer.createAccount(ownerAddr, 1234, lamportKeys.publicKeys)
+      await deployer.createAccount(ownerAddr, 1234, lamportKeys.publicKeys, bounty.address)
       expect(await isDeployed(target)).to.eq(true)
     })
   })
