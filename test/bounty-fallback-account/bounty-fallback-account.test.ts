@@ -74,9 +74,7 @@ describe('BountyFallbackAccount', function () {
 
   describe('#validateUserOp', () => {
     let account: BountyFallbackAccount
-    let userOpLamport: UserOperation
     let userOpHash: string
-    let userOpNoLamport: UserOperation
     let preBalance: number
     let expectedPay: number
 
@@ -85,6 +83,10 @@ describe('BountyFallbackAccount', function () {
     let nonceTracker = 0
 
     let bounty: SignatureBounty
+
+    let getUserOpLamport: () => UserOperation
+    let userOpLamportInitial: UserOperation
+    let userOpNoLamport: UserOperation
 
     before(async () => {
       bounty = await signatureBountyUtils.deploySignatureBounty()
@@ -103,21 +105,24 @@ describe('BountyFallbackAccount', function () {
       const maxFeePerGas = 3e9
       const chainId = await ethers.provider.getNetwork().then(net => net.chainId)
 
-      userOpLamport = signUserOpLamport(fillUserOpDefaults({
+      getUserOpLamport = () => signUserOpLamport(fillUserOpDefaults({
         sender: account.address,
         callGasLimit,
         verificationGasLimit,
         maxFeePerGas
       }), accountOwner, entryPoint, chainId)
-      userOpHash = await getUserOpHash(userOpLamport, entryPoint, chainId)
+
+      userOpLamportInitial = getUserOpLamport()
 
       userOpNoLamport = {
-        ...userOpLamport,
+        ...userOpLamportInitial,
         signature: Buffer.concat([
-          Buffer.from(arrayify(userOpLamport.signature)).slice(0, EDCSA_LENGTH),
-          Buffer.from(new Array(userOpLamport.signature.length - EDCSA_LENGTH).fill(0))
+          Buffer.from(arrayify(userOpLamportInitial.signature)).slice(0, EDCSA_LENGTH),
+          Buffer.from(new Array(userOpLamportInitial.signature.length - EDCSA_LENGTH).fill(0))
         ])
       }
+
+      userOpHash = await getUserOpHash(userOpLamportInitial, entryPoint, chainId)
 
       expectedPay = actualGasPrice * (callGasLimit + verificationGasLimit)
       preBalance = await getBalance(account.address)
@@ -158,10 +163,6 @@ describe('BountyFallbackAccount', function () {
       before(async () => {
         const tx = await signatureBountyUtils.solveBounty(bounty)
         await tx.wait()
-
-        const ret = await account.validateUserOp(userOpLamport, userOpHash, expectedPay, { gasPrice: actualGasPrice })
-        await ret.wait()
-        ++nonceTracker
       })
 
       it('should return NO_SIG_VALIDATION on wrong lamport signature', async () => {
@@ -169,8 +170,8 @@ describe('BountyFallbackAccount', function () {
         expect(deadline).to.eq(1)
       })
 
-      it.only('should return 0 on correct lamport signature', async () => {
-        const deadline = await account.callStatic.validateUserOp({ ...userOpLamport, nonce: nonceTracker }, userOpHash, 0)
+      it('should return 0 on correct lamport signature', async () => {
+        const deadline = await account.callStatic.validateUserOp({ ...userOpLamportInitial, nonce: nonceTracker }, userOpHash, 0)
         expect(deadline).to.eq(0)
       })
 
@@ -181,41 +182,32 @@ describe('BountyFallbackAccount', function () {
     })
 
     describe('lamport signature is updated', () => {
-      before(async () => {
-        bounty = await signatureBountyUtils.deploySignatureBounty()
-      })
-
-      it('should update the lamport key for the subsequent transaction', async () => {
+      it('should update the lamport key for the subsequent transaction even before bounty is solved', async () => {
         const oldLamportKey = account.lamportKey()
-        const tx1 = await account.callStatic.validateUserOp({ ...userOpLamport, nonce: nonceTracker }, userOpHash, 0)
+        const tx1 = await account.callStatic.validateUserOp({ ...userOpLamportInitial, nonce: nonceTracker }, userOpHash, 0)
         expect(tx1).to.eq(0)
         expect(oldLamportKey).to.not.equal(account.lamportKey())
       })
 
-      it('should be able to send two messages by using updated lamport signatures', async () => {
-        const txUsingFirstSignature = await account.callStatic.validateUserOp({ ...userOpLamport, nonce: nonceTracker }, userOpHash, 0)
-        expect(txUsingFirstSignature).to.eq(0)
+      describe('multiple transactions', () => {
+        before(async () => {
+          const tx = await signatureBountyUtils.solveBounty(bounty)
+          await tx.wait()
 
-        const tx = await signatureBountyUtils.solveBounty(bounty)
-        await tx.wait()
+          const txUsingFirstSignature = await account.validateUserOp({ ...userOpLamportInitial, nonce: nonceTracker }, userOpHash, 0)
+          await txUsingFirstSignature.wait()
+          ++nonceTracker
+        })
 
-        const txUsingFirstSignatureAgain = await account.callStatic.validateUserOp({ ...userOpLamport, nonce: nonceTracker }, userOpHash, 0)
-        expect(txUsingFirstSignatureAgain).to.eq(1)
+        it('should not allow same lamport signature twice', async () => {
+          const txUsingFirstSignatureAgain = await account.callStatic.validateUserOp({ ...userOpLamportInitial, nonce: nonceTracker }, userOpHash, 0)
+          expect(txUsingFirstSignatureAgain).to.eq(1)
+        })
 
-        const callGasLimit = 200000
-        const verificationGasLimit = 100000
-        const maxFeePerGas = 3e9
-        const chainId = await ethers.provider.getNetwork().then(net => net.chainId)
-        const newUserOpLamport = signUserOpLamport(fillUserOpDefaults({
-          sender: account.address,
-          callGasLimit,
-          verificationGasLimit,
-          maxFeePerGas
-        }), accountOwner, entryPoint, chainId)
-
-        const txUsingDifferentSignature = await account.callStatic.validateUserOp({ ...newUserOpLamport, nonce: nonceTracker }, userOpHash, 0)
-        expect(txUsingDifferentSignature).to.eq(0)
-        ++nonceTracker
+        it.only('should require updated lamport signature on subsequent transaction', async () => {
+          const txUsingUpdatedSignature = await account.callStatic.validateUserOp({ ...getUserOpLamport(), nonce: nonceTracker }, userOpHash, 0)
+          expect(txUsingUpdatedSignature).to.eq(0)
+        })
       })
     })
   })
