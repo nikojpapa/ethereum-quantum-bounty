@@ -6,24 +6,28 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 import "../samples/SimpleAccount.sol";
+import "../signature-bounty/SignatureBounty.sol";
 
 contract BountyFallbackAccount is SimpleAccount {
     using ECDSA for bytes32;
 
-    address bountyContractAddress;
-    bytes[][] lamportKey;
-    uint256 numberOfTests;
-    uint256 testSizeInBytes;
+    SignatureBounty private bountyContract;
+    bytes[][] private lamportKey;
+    uint256 private numberOfTests;
+    uint256 private testSizeInBytes;
+    uint16 private ecdsaLength;
 
     constructor(IEntryPoint anEntryPoint) SimpleAccount(anEntryPoint) {
     }
 
-    function initialize(address anOwner, bytes[][] memory publicKey, address bountyContractAddress) public initializer {
-        bountyContractAddress = bountyContractAddress;
+    function initialize(address anOwner, bytes[][] memory publicKey, address payable bountyContractAddress) public initializer {
+        bountyContract = SignatureBounty(bountyContractAddress);
 
         lamportKey = publicKey;
         numberOfTests = publicKey[0].length;
         testSizeInBytes = publicKey[0][0].length;
+
+        ecdsaLength = 65;
 
         SimpleAccount.initialize(anOwner);
     }
@@ -32,14 +36,14 @@ contract BountyFallbackAccount is SimpleAccount {
     internal override returns (uint256 validationData) {
         bytes32 userOpHashEthSigned = userOpHash.toEthSignedMessageHash();
 
-        bytes memory ecdsaSignature = BytesLib.slice(userOp.signature, 0, 65);
+        bytes memory ecdsaSignature = BytesLib.slice(userOp.signature, 0, ecdsaLength);
         if (owner != userOpHashEthSigned.recover(ecdsaSignature))
             return SIG_VALIDATION_FAILED;
 
-        if (bountyContractAddress.solved()) {
+        if (bountyContract.solved()) {
             bytes[] memory checks = new bytes[](testSizeInBytes);
             for (uint8 i = 0; i < numberOfTests; i++) {
-                bytes memory signatureByte = BytesLib.slice(userOp.signature, testSizeInBytes * i, testSizeInBytes);
+                bytes memory signatureByte = BytesLib.slice(userOp.signature, ecdsaLength + testSizeInBytes * i, testSizeInBytes);
                 bytes32 valueToTest = keccak256(signatureByte);
                 checks[i] = BytesLib.slice(bytes32ToBytes(valueToTest), 0, testSizeInBytes);
             }
