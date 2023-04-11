@@ -6,7 +6,7 @@ import { getReversedBits } from './buffer-bit-utils'
 
 // inspiration from https://zacharyratliff.org/Lamport-Signatures/
 
-export function hashMessage (message: string): Buffer {
+export function hashMessageWithEthHeader (message: string): Buffer {
   const labeledMessage = Buffer.concat([
     Buffer.from('\x19Ethereum Signed Message:\n32', 'ascii'),
     Buffer.from(arrayify(message))

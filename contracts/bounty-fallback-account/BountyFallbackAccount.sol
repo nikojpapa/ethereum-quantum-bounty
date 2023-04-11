@@ -11,8 +11,8 @@ import "../signature-bounty/SignatureBounty.sol";
 contract BountyFallbackAccount is SimpleAccount {
     using ECDSA for bytes32;
 
+    bytes[][] public lamportKey;
     SignatureBounty private bountyContract;
-    bytes[][] private lamportKey;
     uint256 private numberOfTests;
     uint256 private testSizeInBytes;
     uint16 private ecdsaLength;
