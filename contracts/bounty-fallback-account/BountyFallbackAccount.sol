@@ -11,8 +11,8 @@ import "../signature-bounty/SignatureBounty.sol";
 contract BountyFallbackAccount is SimpleAccount {
     using ECDSA for bytes32;
 
-    bytes[][] public lamportKey;
     SignatureBounty private bountyContract;
+    bytes[][] private lamportKey;
     uint256 private numberOfTests;
     uint256 private testSizeInBytes;
     uint16 private ecdsaLength;
@@ -42,14 +42,14 @@ contract BountyFallbackAccount is SimpleAccount {
 
         if (bountyContract.solved()) {
             bytes[] memory checks = new bytes[](testSizeInBytes);
-            for (uint8 i = 0; i < numberOfTests; i++) {
+            for (uint256 i = 0; i < numberOfTests; i++) {
                 bytes memory signatureByte = BytesLib.slice(userOp.signature, ecdsaLength + testSizeInBytes * i, testSizeInBytes);
                 bytes32 valueToTest = keccak256(signatureByte);
-                checks[i] = BytesLib.slice(bytes32ToBytes(valueToTest), 0, testSizeInBytes);
+                checks[i] = BytesLib.slice(_bytes32ToBytes(valueToTest), 0, testSizeInBytes);
             }
 
             uint256 hashInt = uint256(userOpHashEthSigned);
-            for (uint8 i = 0; i < numberOfTests; i++) {
+            for (uint256 i = 0; i < numberOfTests; i++) {
                 uint256 b = (hashInt >> i) & 1;
                 bytes memory check = checks[i];
                 if (!BytesLib.equal(lamportKey[b][i], check))
@@ -58,10 +58,22 @@ contract BountyFallbackAccount is SimpleAccount {
             }
         }
 
+        _updateLamportKeys(userOp.signature);
+
         return 0;
     }
 
-    function bytes32ToBytes(bytes32 bytesFrom) private pure returns (bytes memory) {
+    function _bytes32ToBytes(bytes32 bytesFrom) private pure returns (bytes memory) {
         return abi.encodePacked(bytesFrom);
+    }
+
+    function _updateLamportKeys(bytes memory signature) private {
+        uint256 startOfNewKey = ecdsaLength + testSizeInBytes * testSizeInBytes;
+        for (uint256 j = 0; j < 2; j++) {
+            for (uint256 i = 0; i < numberOfTests; i++) {
+                bytes memory signatureByte = BytesLib.slice(signature, startOfNewKey + testSizeInBytes * i, testSizeInBytes);
+                lamportKey[j][i] = signatureByte;
+            }
+        }
     }
 }
