@@ -24,6 +24,7 @@ import { signUserOpLamport } from './UserOpLamport'
 import { WalletLamport } from './wallet-lamport'
 import { generateLamportKeys } from './lamport-utils'
 import SignatureBountyUtils from './signature-bounty-utils'
+import { BigNumber } from 'ethers'
 
 const EDCSA_LENGTH = 65
 
@@ -180,23 +181,38 @@ describe('BountyFallbackAccount', function () {
       })
     })
 
-    describe('lamport signature is updated', () => {
-      beforeEach(async () => {
-        const tx = await signatureBountyUtils.solveBounty(bounty)
-        await tx.wait()
-
-        const txUsingFirstSignature = await account.validateUserOp({ ...userOpLamportInitial, nonce: nonceTracker }, userOpHash, 0)
+    describe.only('lamport signature is updated', () => {
+      async function updateSignature (userOpLamport: UserOperation): Promise<void> {
+        const txUsingFirstSignature = await account.validateUserOp({ ...userOpLamport, nonce: nonceTracker }, userOpHash, 0)
         await txUsingFirstSignature.wait()
         ++nonceTracker
+      }
+
+      async function testSignature (userOpLamport: UserOperation): Promise<BigNumber> {
+        return await account.callStatic.validateUserOp({ ...userOpLamport, nonce: nonceTracker }, userOpHash, 0)
+      }
+
+      beforeEach(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const updateSignatureBeforeBountyIsSolved = await updateSignature(userOpLamportInitial)
+
+        const tx = await signatureBountyUtils.solveBounty(bounty)
+        await tx.wait()
       })
 
       it('should not allow same lamport signature twice', async () => {
-        const txUsingFirstSignatureAgain = await account.callStatic.validateUserOp({ ...userOpLamportInitial, nonce: nonceTracker }, userOpHash, 0)
+        const txUsingFirstSignatureAgain = await testSignature(userOpLamportInitial)
         expect(txUsingFirstSignatureAgain).to.eq(1)
       })
 
       it('should require updated lamport signature on subsequent transaction', async () => {
-        const txUsingUpdatedSignature = await account.callStatic.validateUserOp({ ...getUserOpLamport(), nonce: nonceTracker }, userOpHash, 0)
+        const txUsingUpdatedSignature = await testSignature(getUserOpLamport())
+        expect(txUsingUpdatedSignature).to.eq(0)
+      })
+
+      it('should also update the lamport key after bounty is solved', async () => {
+        await updateSignature(getUserOpLamport())
+        const txUsingUpdatedSignature = await testSignature(getUserOpLamport())
         expect(txUsingUpdatedSignature).to.eq(0)
       })
     })
