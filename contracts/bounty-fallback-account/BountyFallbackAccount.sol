@@ -21,6 +21,10 @@ contract BountyFallbackAccount is SimpleAccount {
     }
 
     function initialize(address anOwner, bytes[][] memory publicKey, address payable bountyContractAddress) public initializer {
+        _initialize(anOwner, publicKey, bountyContractAddress);
+    }
+
+    function _initialize(address anOwner, bytes[][] memory publicKey, address payable bountyContractAddress) internal {
         bountyContract = SignatureBounty(bountyContractAddress);
 
         lamportKey = publicKey;

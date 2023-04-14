@@ -31,19 +31,23 @@ class SignatureBountyUtils {
     return this._publicKeys
   }
 
-  public async solveBounty (bounty: SignatureBounty): Promise<ContractTransaction> {
+  public async solveBounty (bounty: SignatureBounty): Promise<Promise<ContractTransaction>> {
     const arbitraryUser = ethers.provider.getSigner(1)
-    const message = web3.utils.sha3('arbitrary') as string
+    const message = this.arbitraryMessage()
     const signatures = await this.getSignatures(message)
-    return await bounty.connect(arbitraryUser).widthdraw(message, signatures)
+    return bounty.connect(arbitraryUser).widthdraw(message, signatures)
   }
 
-  private async getSignatures (message: string): Promise<string[]> {
+  public async getSignatures (message: string): Promise<string[]> {
     if (this._signatures.length === 0) {
       this._signatures = await Promise.all(this.signers.map(async (signer) =>
         await web3.eth.sign(message, await signer.getAddress())))
     }
     return this._signatures
+  }
+
+  public arbitraryMessage (): string {
+    return web3.utils.sha3('arbitrary') as string
   }
 
   get signers (): JsonRpcSigner[] {

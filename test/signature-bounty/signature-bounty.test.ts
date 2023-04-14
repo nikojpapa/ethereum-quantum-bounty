@@ -57,14 +57,17 @@ describe('SignatureBounty', () => {
       })
 
       it('should not allow further solve attempts if already solved', async () => {
-        const tx = await signatureBountyUtils.solveBounty(bounty)
+        const tx = signatureBountyUtils.solveBounty(bounty)
         await expect(tx).to.be.revertedWith('Already solved')
       })
     })
 
     describe('Incorrect Signatures', () => {
       beforeEach(async () => {
-        const tx = await signatureBountyUtils.solveBounty(bounty)
+        const message = signatureBountyUtils.arbitraryMessage()
+        const signatures = await signatureBountyUtils.getSignatures(message)
+        const incorrectSignatures = signatures.map(_ => signatures[0])
+        const tx = bounty.connect(arbitraryUser).widthdraw(message, incorrectSignatures)
         await expect(tx).to.be.revertedWith('Invalid signatures')
       })
 
