@@ -37,7 +37,9 @@ describe('BountyFallbackAccount', function () {
   const signatureBountyUtils = new SignatureBountyUtils()
   let bounty: SignatureBounty
 
-  before(async function () {
+  beforeEach(async function () {
+    bounty = await signatureBountyUtils.deploySignatureBounty()
+
     accounts = await ethers.provider.listAccounts()
     // ignore in geth.. this is just a sanity test. should be refactored to use a single-account mode..
     if (accounts.length < 2) this.skip()
@@ -80,16 +82,14 @@ describe('BountyFallbackAccount', function () {
 
     const actualGasPrice = 1e9
 
-    let nonceTracker = 0
-
-    let bounty: SignatureBounty
+    let nonceTracker: number
 
     let getUserOpLamport: () => UserOperation
     let userOpLamportInitial: UserOperation
     let userOpNoLamport: UserOperation
 
-    before(async () => {
-      bounty = await signatureBountyUtils.deploySignatureBounty()
+    beforeEach(async () => {
+      nonceTracker = 0
 
       // that's the account of ethersSigner
       const entryPoint = accounts[2];
@@ -113,6 +113,7 @@ describe('BountyFallbackAccount', function () {
       }), accountOwner, entryPoint, chainId)
 
       userOpLamportInitial = getUserOpLamport()
+      userOpHash = await getUserOpHash(userOpLamportInitial, entryPoint, chainId)
 
       userOpNoLamport = {
         ...userOpLamportInitial,
@@ -122,14 +123,12 @@ describe('BountyFallbackAccount', function () {
         ])
       }
 
-      userOpHash = await getUserOpHash(userOpLamportInitial, entryPoint, chainId)
-
       expectedPay = actualGasPrice * (callGasLimit + verificationGasLimit)
       preBalance = await getBalance(account.address)
     })
 
     describe('before bounty is solved', function () {
-      before(async () => {
+      beforeEach(async () => {
         const ret = await account.validateUserOp(userOpNoLamport, userOpHash, expectedPay, { gasPrice: actualGasPrice })
         await ret.wait()
         ++nonceTracker
@@ -160,7 +159,7 @@ describe('BountyFallbackAccount', function () {
     })
 
     describe('after bounty is solved', () => {
-      before(async () => {
+      beforeEach(async () => {
         const tx = await signatureBountyUtils.solveBounty(bounty)
         await tx.wait()
       })
@@ -182,7 +181,7 @@ describe('BountyFallbackAccount', function () {
     })
 
     describe('lamport signature is updated', () => {
-      before(async () => {
+      beforeEach(async () => {
         const tx = await signatureBountyUtils.solveBounty(bounty)
         await tx.wait()
 
