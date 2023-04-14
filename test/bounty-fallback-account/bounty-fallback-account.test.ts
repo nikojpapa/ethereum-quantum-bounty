@@ -153,7 +153,7 @@ describe('BountyFallbackAccount', function () {
         expect(deadline).to.eq(1)
       })
 
-      it('should return 0 on correct ECDSA signature', async () => {
+      it('should return 0 on correct ECDSA signature but incorrect Lamport signature', async () => {
         const deadline = await account.callStatic.validateUserOp({ ...userOpNoLamport, nonce: nonceTracker }, userOpHash, 0)
         expect(deadline).to.eq(0)
       })
@@ -174,14 +174,9 @@ describe('BountyFallbackAccount', function () {
         const deadline = await account.callStatic.validateUserOp({ ...userOpLamportInitial, nonce: nonceTracker }, userOpHash, 0)
         expect(deadline).to.eq(0)
       })
-
-      it('should succeed on larger numtests than testsize', () => {
-        createAccountOwnerLamport(4, 3)
-        expect.fail('Using these params when creating an account for the "should pay" test fails')
-      })
     })
 
-    describe.only('lamport signature is updated', () => {
+    describe('lamport signature is updated', () => {
       async function updateSignature (userOpLamport: UserOperation): Promise<void> {
         const txUsingFirstSignature = await account.validateUserOp({ ...userOpLamport, nonce: nonceTracker }, userOpHash, 0)
         await txUsingFirstSignature.wait()

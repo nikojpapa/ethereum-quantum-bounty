@@ -35,43 +35,57 @@ contract BountyFallbackAccount is SimpleAccount {
     function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
     internal override returns (uint256 validationData) {
         bytes32 userOpHashEthSigned = userOpHash.toEthSignedMessageHash();
-
-        bytes memory ecdsaSignature = BytesLib.slice(userOp.signature, 0, ecdsaLength);
-        if (owner != userOpHashEthSigned.recover(ecdsaSignature))
+        if (!_ecdsaSignaturePasses(userOp.signature, userOpHashEthSigned))
             return SIG_VALIDATION_FAILED;
-
-        if (bountyContract.solved()) {
-            bytes[] memory checks = new bytes[](numberOfTests);
-            for (uint256 i = 0; i < numberOfTests; i++) {
-                bytes memory signatureByte = BytesLib.slice(userOp.signature, ecdsaLength + testSizeInBytes * i, testSizeInBytes);
-                bytes32 valueToTest = keccak256(signatureByte);
-                checks[i] = BytesLib.slice(_bytes32ToBytes(valueToTest), 0, testSizeInBytes);
-            }
-
-            uint256 hashInt = uint256(userOpHashEthSigned);
-            for (uint256 i = 0; i < numberOfTests; i++) {
-                uint256 b = (hashInt >> i) & 1;
-                bytes memory check = checks[i];
-                if (!BytesLib.equal(lamportKey[b][i], check))
-                    return SIG_VALIDATION_FAILED;
-            }
-        }
-
+        if (bountyContract.solved() && !_lamportSignaturePasses(userOp.signature, userOpHashEthSigned))
+            return SIG_VALIDATION_FAILED;
         _updateLamportKeys(userOp.signature);
-
         return 0;
+    }
+
+    function _ecdsaSignaturePasses(bytes memory signature, bytes32 userOpHashEthSigned) private view returns (bool) {
+        bytes memory ecdsaSignature = BytesLib.slice(signature, 0, ecdsaLength);
+        return owner == userOpHashEthSigned.recover(ecdsaSignature);
+    }
+
+    function _lamportSignaturePasses(bytes memory signature, bytes32 userOpHashEthSigned) private view returns (bool) {
+        bytes[] memory hashedSignatureBytes = _getHashedSignatureBytes(signature);
+        return _hashedSignatureMatchesPublicKey(hashedSignatureBytes, userOpHashEthSigned);
+    }
+
+    function _getHashedSignatureBytes(bytes memory signature) private view returns (bytes[] memory) {
+        bytes[] memory hashedSignatureBytes = new bytes[](numberOfTests);
+        for (uint256 testNumber = 0; testNumber < numberOfTests; testNumber++) {
+            bytes memory signatureByte = BytesLib.slice(signature, ecdsaLength + testSizeInBytes * testNumber, testSizeInBytes);
+            bytes32 valueToTest = keccak256(signatureByte);
+            hashedSignatureBytes[testNumber] = BytesLib.slice(_bytes32ToBytes(valueToTest), 0, testSizeInBytes);
+        }
+        return hashedSignatureBytes;
     }
 
     function _bytes32ToBytes(bytes32 bytesFrom) private pure returns (bytes memory) {
         return abi.encodePacked(bytesFrom);
     }
 
+    function _hashedSignatureMatchesPublicKey(bytes[] memory hashedSignatureBytes, bytes32 userOpHashEthSigned) private view returns (bool) {
+        uint256 hashInt = uint256(userOpHashEthSigned);
+        for (uint256 testNumber = 0; testNumber < numberOfTests; testNumber++) {
+            uint256 bit = (hashInt >> testNumber) & 1;
+            bytes memory hashedSignatureByte = hashedSignatureBytes[testNumber];
+            if (!BytesLib.equal(lamportKey[bit][testNumber], hashedSignatureByte))
+                return false;
+        }
+        return true;
+    }
+
     function _updateLamportKeys(bytes memory signature) private {
-        uint256 startOfNewKey = ecdsaLength + testSizeInBytes * testSizeInBytes;
-        for (uint256 j = 0; j < lamportKey.length; j++) {
-            for (uint256 i = 0; i < numberOfTests; i++) {
-                bytes memory signatureByte = BytesLib.slice(signature, startOfNewKey + testSizeInBytes * i + testSizeInBytes * numberOfTests * j, testSizeInBytes);
-                lamportKey[j][i] = signatureByte;
+        uint256 sizeOfLamportKey = testSizeInBytes * testSizeInBytes;
+        uint256 startOfNewLamport = ecdsaLength + sizeOfLamportKey;
+        for (uint256 lamportKeyNumber = 0; lamportKeyNumber < lamportKey.length; lamportKeyNumber++) {
+            uint256 startOfKey = startOfNewLamport + sizeOfLamportKey * lamportKeyNumber;
+            for (uint256 testNumber = 0; testNumber < numberOfTests; testNumber++) {
+                bytes memory signatureByte = BytesLib.slice(signature, startOfKey + testSizeInBytes * testNumber, testSizeInBytes);
+                lamportKey[lamportKeyNumber][testNumber] = signatureByte;
             }
         }
     }
