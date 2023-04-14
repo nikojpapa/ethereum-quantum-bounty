@@ -69,9 +69,9 @@ contract BountyFallbackAccount is SimpleAccount {
 
     function _updateLamportKeys(bytes memory signature) private {
         uint256 startOfNewKey = ecdsaLength + testSizeInBytes * testSizeInBytes;
-        for (uint256 j = 0; j < 2; j++) {
+        for (uint256 j = 0; j < lamportKey.length; j++) {
             for (uint256 i = 0; i < numberOfTests; i++) {
-                bytes memory signatureByte = BytesLib.slice(signature, startOfNewKey + testSizeInBytes * i, testSizeInBytes);
+                bytes memory signatureByte = BytesLib.slice(signature, startOfNewKey + testSizeInBytes * i + testSizeInBytes * numberOfTests * j, testSizeInBytes);
                 lamportKey[j][i] = signatureByte;
             }
         }

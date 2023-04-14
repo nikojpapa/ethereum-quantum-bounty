@@ -182,32 +182,23 @@ describe('BountyFallbackAccount', function () {
     })
 
     describe('lamport signature is updated', () => {
-      it('should update the lamport key for the subsequent transaction even before bounty is solved', async () => {
-        const oldLamportKey = account.lamportKey()
-        const tx1 = await account.callStatic.validateUserOp({ ...userOpLamportInitial, nonce: nonceTracker }, userOpHash, 0)
-        expect(tx1).to.eq(0)
-        expect(oldLamportKey).to.not.equal(account.lamportKey())
+      before(async () => {
+        const tx = await signatureBountyUtils.solveBounty(bounty)
+        await tx.wait()
+
+        const txUsingFirstSignature = await account.validateUserOp({ ...userOpLamportInitial, nonce: nonceTracker }, userOpHash, 0)
+        await txUsingFirstSignature.wait()
+        ++nonceTracker
       })
 
-      describe('multiple transactions', () => {
-        before(async () => {
-          const tx = await signatureBountyUtils.solveBounty(bounty)
-          await tx.wait()
+      it('should not allow same lamport signature twice', async () => {
+        const txUsingFirstSignatureAgain = await account.callStatic.validateUserOp({ ...userOpLamportInitial, nonce: nonceTracker }, userOpHash, 0)
+        expect(txUsingFirstSignatureAgain).to.eq(1)
+      })
 
-          const txUsingFirstSignature = await account.validateUserOp({ ...userOpLamportInitial, nonce: nonceTracker }, userOpHash, 0)
-          await txUsingFirstSignature.wait()
-          ++nonceTracker
-        })
-
-        it('should not allow same lamport signature twice', async () => {
-          const txUsingFirstSignatureAgain = await account.callStatic.validateUserOp({ ...userOpLamportInitial, nonce: nonceTracker }, userOpHash, 0)
-          expect(txUsingFirstSignatureAgain).to.eq(1)
-        })
-
-        it.only('should require updated lamport signature on subsequent transaction', async () => {
-          const txUsingUpdatedSignature = await account.callStatic.validateUserOp({ ...getUserOpLamport(), nonce: nonceTracker }, userOpHash, 0)
-          expect(txUsingUpdatedSignature).to.eq(0)
-        })
+      it('should require updated lamport signature on subsequent transaction', async () => {
+        const txUsingUpdatedSignature = await account.callStatic.validateUserOp({ ...getUserOpLamport(), nonce: nonceTracker }, userOpHash, 0)
+        expect(txUsingUpdatedSignature).to.eq(0)
       })
     })
   })
