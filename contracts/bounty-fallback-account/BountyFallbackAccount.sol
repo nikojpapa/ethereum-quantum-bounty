@@ -41,7 +41,7 @@ contract BountyFallbackAccount is SimpleAccount {
             return SIG_VALIDATION_FAILED;
 
         if (bountyContract.solved()) {
-            bytes[] memory checks = new bytes[](testSizeInBytes);
+            bytes[] memory checks = new bytes[](numberOfTests);
             for (uint256 i = 0; i < numberOfTests; i++) {
                 bytes memory signatureByte = BytesLib.slice(userOp.signature, ecdsaLength + testSizeInBytes * i, testSizeInBytes);
                 bytes32 valueToTest = keccak256(signatureByte);
@@ -54,7 +54,6 @@ contract BountyFallbackAccount is SimpleAccount {
                 bytes memory check = checks[i];
                 if (!BytesLib.equal(lamportKey[b][i], check))
                     return SIG_VALIDATION_FAILED;
-    //            require(BytesLib.equal(lamportKey[b][i], check), 'Invalid signature');
             }
         }
 
