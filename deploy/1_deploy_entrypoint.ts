@@ -36,4 +36,5 @@ const deployEntryPoint: DeployFunction = async function (hre: HardhatRuntimeEnvi
   */
 }
 
-export default deployEntryPoint
+module.exports = deployEntryPoint
+module.exports.tags = ['EntryPoint']

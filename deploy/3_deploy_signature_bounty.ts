@@ -14,17 +14,17 @@ const deploySignatureBounty: DeployFunction = async function (hre: HardhatRuntim
     publicKeys.push(randomWallet.address)
   }
 
-  const entrypoint = await hre.deployments.get('EntryPoint')
+  // const entrypoint = await hre.deployments.get('EntryPoint')
   const account = await hre.deployments.deploy(
     'SignatureBounty', {
       from,
-      args: [entrypoint],
+      args: [publicKeys],
       gasLimit: 6e6,
       deterministicDeployment: true
     })
-  console.log('==entrypoint addr=', account.address)
+  console.log('==SignatureBounty addr=', account.address)
 
-  await account.initialize(publicKeys)
+  // await account.initialize(publicKeys)
 }
 
 module.exports = deploySignatureBounty
