@@ -8,6 +8,9 @@ import '@nomiclabs/hardhat-web3'
 import 'solidity-coverage'
 
 import * as fs from 'fs'
+import * as dotenv from 'dotenv'
+
+dotenv.config()
 
 const mnemonicFileName = process.env.MNEMONIC_FILE ?? `${process.env.HOME}/.secret/testnet-mnemonic.txt`
 let mnemonic = 'test '.repeat(11) + 'junk'
@@ -53,7 +56,13 @@ const config: HardhatUserConfig = {
     dev: { url: 'http://localhost:8545' },
     // github action starts localgeth service, for gas calculations
     localgeth: { url: 'http://localgeth:8545' },
-    goerli: getNetwork('goerli'),
+    goerli: {
+      ...getNetwork('goerli'),
+      accounts: [
+        process.env.PRIVATE_KEY
+      ],
+      chainId: 5
+    },
     sepolia: getNetwork('sepolia'),
     proxy: getNetwork1('http://localhost:8545')
   },
