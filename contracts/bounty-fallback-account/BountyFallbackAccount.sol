@@ -20,11 +20,11 @@ contract BountyFallbackAccount is SimpleAccount {
     constructor(IEntryPoint anEntryPoint) SimpleAccount(anEntryPoint) {
     }
 
-    function initialize(address anOwner, bytes[][] memory publicKey, address payable bountyContractAddress) public initializer {
+    function initialize(address anOwner, bytes[][] memory publicKey, address payable bountyContractAddress) public override initializer {
         _initialize(anOwner, publicKey, bountyContractAddress);
     }
 
-    function _initialize(address anOwner, bytes[][] memory publicKey, address payable bountyContractAddress) internal {
+    function _initialize(address anOwner, bytes[][] memory publicKey, address payable bountyContractAddress) internal override {
         bountyContract = SignatureBounty(bountyContractAddress);
 
         lamportKey = publicKey;

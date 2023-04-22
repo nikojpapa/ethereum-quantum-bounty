@@ -1,10 +1,10 @@
-import '../aa.init'
+import '../../aa.init'
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { SignatureBounty } from '../../typechain'
+import { SignatureBounty } from '../../../typechain'
 import { BigNumber } from 'ethers'
 import { JsonRpcSigner } from '@ethersproject/providers/src.ts/json-rpc-provider'
-import SignatureBountyUtils from '../bounty-fallback-account/signature-bounty-utils'
+import SignatureBountyUtils from './signature-bounty-utils'
 
 describe('SignatureBounty', () => {
   const signatureBountyUtils = new SignatureBountyUtils()
@@ -64,10 +64,7 @@ describe('SignatureBounty', () => {
 
     describe('Incorrect Signatures', () => {
       beforeEach(async () => {
-        const message = signatureBountyUtils.arbitraryMessage()
-        const signatures = await signatureBountyUtils.getSignatures(message)
-        const incorrectSignatures = signatures.map(_ => signatures[0])
-        const tx = bounty.connect(arbitraryUser).widthdraw(message, incorrectSignatures)
+        const tx = signatureBountyUtils.solveBountyIncorrectly(bounty)
         await expect(tx).to.be.revertedWith('Invalid signatures')
       })
 
@@ -88,8 +85,9 @@ describe('SignatureBounty', () => {
 
   describe('Lock generation', () => {
     it('should set locks as publicly available', async () => {
-      for (let i = 0; i < signatureBountyUtils.signers.length; i++) {
-        const expectedPublicKey = (await signatureBountyUtils.getPublicKeys())[i]
+      const locks = await signatureBountyUtils.getLocks()
+      for (let i = 0; i < locks.length; i++) {
+        const expectedPublicKey = locks[i]
         const bountyLock = await bounty.locks(i)
         expect(bountyLock).to.equal(expectedPublicKey)
       }
