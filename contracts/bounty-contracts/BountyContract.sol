@@ -1,4 +1,9 @@
-interface BountyContract {
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity ^0.8.12;
+
+import "@openzeppelin/contracts/utils/Address.sol";
+
+abstract contract BountyContract {
   bytes[] public locks;
   bool public solved;
 
@@ -7,15 +12,13 @@ interface BountyContract {
     _;
   }
 
-  function widthdraw() public requireUnsolved {
-    require(_verifySolutions(message, signatures), 'Invalid solution');
+  function widthdraw(bytes[][] memory solutions) public requireUnsolved {
+    require(_verifySolutions(solutions), 'Invalid solution');
     solved = true;
     _sendBountyToSolver();
   }
 
-  function _verifySolutions(bytes[][] memory signatures) private view virtual returns (bool) {
-    return false;
-  }
+  function _verifySolutions(bytes[][] memory solutions) internal view virtual returns (bool);
 
   function _sendBountyToSolver() private {
     Address.sendValue(payable(msg.sender), bounty());

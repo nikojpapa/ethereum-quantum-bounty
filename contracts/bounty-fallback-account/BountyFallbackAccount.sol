@@ -6,12 +6,12 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 import "../samples/SimpleAccount.sol";
-import "../signature-bounty/SignatureBounty.sol";
+import "../bounty-contracts/prime-factoring-bounty/PrimeFactoringBounty.sol";
 
 contract BountyFallbackAccount is SimpleAccount {
     using ECDSA for bytes32;
 
-    SignatureBounty private bountyContract;
+    PrimeFactoringBounty private bountyContract;
     bytes[][] private lamportKey;
     uint256 private numberOfTests;
     uint256 private testSizeInBytes;
@@ -20,12 +20,12 @@ contract BountyFallbackAccount is SimpleAccount {
     constructor(IEntryPoint anEntryPoint) SimpleAccount(anEntryPoint) {
     }
 
-    function initialize(address anOwner, bytes[][] memory publicKey, address payable bountyContractAddress) public override initializer {
+    function initialize(address anOwner, bytes[][] memory publicKey, address payable bountyContractAddress) public initializer {
         _initialize(anOwner, publicKey, bountyContractAddress);
     }
 
-    function _initialize(address anOwner, bytes[][] memory publicKey, address payable bountyContractAddress) internal override {
-        bountyContract = SignatureBounty(bountyContractAddress);
+    function _initialize(address anOwner, bytes[][] memory publicKey, address payable bountyContractAddress) internal {
+        bountyContract = PrimeFactoringBounty(bountyContractAddress);
 
         lamportKey = publicKey;
         numberOfTests = publicKey[0].length;

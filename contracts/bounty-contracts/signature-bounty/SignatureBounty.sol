@@ -7,7 +7,7 @@
 //contract SignatureBounty is BountyContract {
 //    using ECDSA for bytes32;
 //
-//    function _verifySolutions(bytes[][] memory solutions) private view override returns (bool) {
+//    function _verifySolutions(bytes[][] memory solutions) internal view override returns (bool) {
 //        for (uint256 i = 0; i < locks.length; i++) {
 //            address lock = locks[i];
 //            bytes[] memory lockSolutions = solutions[i];
