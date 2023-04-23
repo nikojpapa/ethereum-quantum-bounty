@@ -7,7 +7,7 @@ import "./BigNumbers.sol";
 library MillerRabin {
   using BigNumbers for *;
 
-  function isPrime(bytes memory primeCandidate) public view returns (bool){
+  function isPrime(bytes memory primeCandidate) internal view returns (bool){
     BigNumber memory a = primeCandidate.init(false);
 
     BigNumber memory one = BigNumbers.one();

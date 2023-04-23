@@ -7,6 +7,7 @@ import "solidity-bytes-utils/contracts/BytesLib.sol";
 import "../BountyContract.sol";
 import "./BigNumbers.sol";
 import "./MillerRabin.sol";
+import "./RandomNumberAccumulator.sol";
 
 contract PrimeFactoringBounty is BountyContract, VRFConsumerBase {
   using BigNumbers for *;
@@ -14,13 +15,9 @@ contract PrimeFactoringBounty is BountyContract, VRFConsumerBase {
   bytes32 internal keyHash;
   uint256 internal fee;
 
-  uint256 private primeNumberBitSize;
-  uint256 private numberOfPrimesPerLock;
-  bytes[] private primeNumbers;
-  bytes private primeCandidate;
-  uint8 private randomPrimesCounter = 0;
+  RandomNumberAccumulator randomNumberAccumulator;
 
-  constructor(uint256 numberOfLocks, uint256 primesBitSize, uint256 primesPerLock)
+  constructor(uint256 numberOfLocks, uint256 primesPerLock, uint256 bytesPerPrime)
     BountyContract()
     VRFConsumerBase(
       0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9, // VRF Coordinator
@@ -30,11 +27,7 @@ contract PrimeFactoringBounty is BountyContract, VRFConsumerBase {
     keyHash = 0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4;
     fee = 0; //0.1 * 10 ** 18; // 0.1 LINK
 
-    locks = new bytes[](numberOfLocks);
-    primeNumberBitSize = primesBitSize;
-    numberOfPrimesPerLock = primesPerLock;
-    primeNumbers = new bytes[](primesPerLock * numberOfLocks);
-    primeCandidate = BigNumbers.ZERO;
+    randomNumberAccumulator = new RandomNumberAccumulator(numberOfLocks, primesPerLock, bytesPerPrime);
 
     generateLargePrimes();
   }
@@ -45,33 +38,13 @@ contract PrimeFactoringBounty is BountyContract, VRFConsumerBase {
   }
 
   function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
-    primeCandidate = BytesLib.concat(primeCandidate, abi.encodePacked(randomness | (1 << 255) | 1));
-    if (primeCandidate.init(false).bitlen < primeNumberBitSize) {
-      generateLargePrimes();
-      return;
-    }
-    primeCandidate = BytesLib.slice(primeCandidate, 0, primeNumberBitSize);
-
-    if (MillerRabin.isPrime(primeCandidate)) {
-      primeNumbers[randomPrimesCounter] = primeCandidate;
-      randomPrimesCounter++;
-
-      if (randomPrimesCounter >= primeNumbers.length) {
-        for (uint256 lockCounter = 0; lockCounter < locks.length; lockCounter++) {
-          uint256 primeNumberIndexStart = lockCounter * numberOfPrimesPerLock;
-          uint256 primeNumberIndexEnd = primeNumberIndexStart + primeNumberIndexStart;
-
-          BigNumber memory product = BigNumbers.one();
-          for (uint256 primeComponentIndex = primeNumberIndexStart; primeComponentIndex < primeNumberIndexEnd; primeComponentIndex++) {
-            product = product.mul(primeNumbers[primeComponentIndex].init(false));
-          }
-          locks[lockCounter] = product.val;
-        }
-        return;
+    randomNumberAccumulator.accumulate(randomness);
+    if (!randomNumberAccumulator.isDone()) generateLargePrimes();
+    else {
+      for (uint256 lockNumber = 0; lockNumber < randomNumberAccumulator.numberOfLocks(); lockNumber++) {
+        locks[lockNumber] = randomNumberAccumulator.locks(lockNumber);
       }
     }
-    primeCandidate = BigNumbers.ZERO;
-    generateLargePrimes();
   }
 
   function _verifySolutions(bytes[][] memory solutions) internal view override returns (bool) {

@@ -3,7 +3,6 @@ import { MillerRabin, MillerRabin__factory } from '../../../typechain'
 import { expect } from 'chai'
 import { Buffer } from 'buffer'
 import { arrayify } from 'ethers/lib/utils'
-import { BigNumber } from 'ethers'
 
 describe('Miller-Rabin Primality Test', () => {
   const ethersSigner = ethers.provider.getSigner()
