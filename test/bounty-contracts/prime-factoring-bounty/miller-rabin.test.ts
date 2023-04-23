@@ -1,5 +1,5 @@
 import { ethers } from 'hardhat'
-import { MillerRabin, MillerRabin__factory } from '../../../../typechain'
+import { MillerRabin, MillerRabin__factory } from '../../../typechain'
 import { expect } from 'chai'
 import { Buffer } from 'buffer'
 import { arrayify } from 'ethers/lib/utils'

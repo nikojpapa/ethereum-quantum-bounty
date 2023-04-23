@@ -7,7 +7,6 @@ import "solidity-bytes-utils/contracts/BytesLib.sol";
 import "../BountyContract.sol";
 import "./BigNumbers.sol";
 import "./MillerRabin.sol";
-import "./RandomNumberGenerator.sol";
 
 contract PrimeFactoringBounty is BountyContract, VRFConsumerBase {
   using BigNumbers for *;
