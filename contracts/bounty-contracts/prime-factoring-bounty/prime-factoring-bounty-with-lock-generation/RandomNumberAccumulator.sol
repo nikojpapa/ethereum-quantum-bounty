@@ -17,7 +17,7 @@ contract RandomNumberAccumulator {
   uint256 private primesPerLock;
   bytes[] private primeNumbers;
   bytes private primeCandidate;
-  uint8 private randomPrimesCounter = 0;
+  uint8 private primesCounter = 0;
 
 
   constructor(uint256 numberOfLocksInit, uint256 primesPerLockInit, uint256 bytesPerPrimeInit) {
@@ -42,10 +42,17 @@ contract RandomNumberAccumulator {
 //    primeCandidate = oddPrimeCandidate.val;
 
     if (MillerRabin.isPrime(primeCandidate)) {
-      primeNumbers[randomPrimesCounter] = primeCandidate;
-      randomPrimesCounter++;
+      uint256 numberOfPrimesCurrentlyGoingIntoThisLock = primesCounter % primesPerLock;
+      uint256 startIndex = (primesCounter / primesPerLock) * primesPerLock;
+      for (uint256 i = startIndex; i < numberOfPrimesCurrentlyGoingIntoThisLock; i++) {
+        bytes memory siblingPrime = primeNumbers[i];
+        if (BytesLib.equal(siblingPrime, primeCandidate)) return;
+      }
 
-      if (randomPrimesCounter >= primeNumbers.length) {
+      primeNumbers[primesCounter] = primeCandidate;
+      primesCounter++;
+
+      if (primesCounter >= primeNumbers.length) {
         for (uint256 lockCounter = 0; lockCounter < locks.length; lockCounter++) {
           uint256 primeNumberIndexStart = lockCounter * primesPerLock;
           uint256 primeNumberIndexEnd = primeNumberIndexStart + primesPerLock;

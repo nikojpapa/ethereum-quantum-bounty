@@ -39,10 +39,6 @@ describe('RandomNumberAccumulator', () => {
     expect.fail()
   })
 
-  it('should exclusively use distinct primes', async () => {
-    expect.fail()
-  })
-
   it('should always set the last bit', async () => {
     expect.fail()
   })
@@ -135,7 +131,7 @@ describe('RandomNumberAccumulator', () => {
     }
 
     const locksGenerated = (await Promise.all([0, 1]
-      .map(lockNumber => randomNumberAccumulator.locks(lockNumber))))
+      .map(async lockNumber => randomNumberAccumulator.locks(lockNumber))))
       .map(lockGenerated => BigNumber.from(lockGenerated))
     const locksExpected = [
       '0xbf17a49f966c36768e3538f08e090b67bf4047dc6d9b37fea73ba093280d5fc51abc03c6ea95cd422422d2202c9665d113b520cfd15bfb1588f2ac0f3ad87d21',
@@ -145,5 +141,19 @@ describe('RandomNumberAccumulator', () => {
 
     const matchExpected = locksGenerated.every((generatedLock, lockNumber) => generatedLock.eq(locksExpected[lockNumber]))
     expect(matchExpected).to.eq(true)
+  })
+
+  describe('distinct primes', () => {
+    it.only('should not allow the same prime in a row', async () => {
+      const numberOfLocks = 1
+      const primesPerLock = 2
+      randomNumberAccumulator = await new RandomNumberAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, BYTES_PER_uint256)
+
+      for (let i = 0; i < 2; i++) await randomNumberAccumulator.accumulate(_256BitPrime)
+
+      const lockIsSet = (await randomNumberAccumulator.locks(1)).length !== 0
+      expect(await randomNumberAccumulator.isDone()).to.be.eq(false)
+      expect(lockIsSet).to.eq(false)
+    })
   })
 })
