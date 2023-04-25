@@ -32,12 +32,8 @@ contract RandomNumberAccumulator {
   }
 
   function accumulate (uint256 randomNumber) public _isNotDone {
-    if (_primeCandidateIsReset()) {
-      randomNumber |= (1 << 255);
-      primeCandidate = abi.encodePacked(randomNumber);
-    } else {
-      primeCandidate = BytesLib.concat(primeCandidate, abi.encodePacked(randomNumber));
-    }
+    if (_primeCandidateIsReset()) randomNumber |= (1 << 255);
+    primeCandidate = BytesLib.concat(primeCandidate, abi.encodePacked(randomNumber));
     if (primeCandidate.length < bytesPerPrime) return;
     primeCandidate = BytesLib.slice(primeCandidate, 0, bytesPerPrime);
 
@@ -67,11 +63,11 @@ contract RandomNumberAccumulator {
   }
 
   function _resetPrimeCandidate() private {
-    primeCandidate = BigNumbers.ZERO;
+    primeCandidate = '';
   }
 
   function _primeCandidateIsReset() private returns (bool) {
-    return BytesLib.equal(primeCandidate, BigNumbers.ZERO);
+    return BytesLib.equal(primeCandidate, '');
   }
 
   modifier _isNotDone() {
