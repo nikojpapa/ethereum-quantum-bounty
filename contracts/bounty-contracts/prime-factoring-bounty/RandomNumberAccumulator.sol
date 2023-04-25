@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.12;
 
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 import "./BigNumbers.sol";
@@ -26,22 +27,28 @@ contract RandomNumberAccumulator {
     primesPerLock = primesPerLockInit;
     bytesPerPrime = bytesPerPrimeInit;
     primeNumbers = new bytes[](primesPerLock * numberOfLocks);
-    primeCandidate = BigNumbers.ZERO;
-    isDone = false;
 
     _resetPrimeCandidate();
+    isDone = false;
   }
 
   function accumulate (uint256 randomNumber) public _isNotDone {
-    if (primeCandidate.length == 0) randomNumber |= (1 << 255);
-    primeCandidate = BytesLib.concat(primeCandidate, abi.encodePacked(randomNumber));
-    if (primeCandidate.length < bytesPerPrime) {
+    if (_primeCandidateIsReset()) {
+      randomNumber |= (1 << 255);
+      primeCandidate = abi.encodePacked(randomNumber);
       return;
     }
-    BigNumber memory oddPrimeCandidate = BytesLib.slice(primeCandidate, 0, bytesPerPrime).init(false).shr(1).shl(1).add(BigNumbers.one());
-    primeCandidate = oddPrimeCandidate.val;
+    primeCandidate = BytesLib.concat(primeCandidate, abi.encodePacked(randomNumber));
+    if (primeCandidate.length < bytesPerPrime) return;
+
+//    primeCandidate = BytesLib.slice(primeCandidate, 0, bytesPerPrime);
+
+//    BigNumber memory shift = BytesLib.slice(primeCandidate, 0, bytesPerPrime).init(false).shr(1).shl(1);
+//    BigNumber memory oddPrimeCandidate = shift.add(BigNumbers.one());
+//    primeCandidate = oddPrimeCandidate.val;
 
     if (MillerRabin.isPrime(primeCandidate)) {
+      require(false, 'here');
       primeNumbers[randomPrimesCounter] = primeCandidate;
       randomPrimesCounter++;
 
@@ -64,6 +71,10 @@ contract RandomNumberAccumulator {
 
   function _resetPrimeCandidate() private {
     primeCandidate = BigNumbers.ZERO;
+  }
+
+  function _primeCandidateIsReset() private returns (bool) {
+    return BytesLib.equal(primeCandidate, BigNumbers.ZERO);
   }
 
   modifier _isNotDone() {
