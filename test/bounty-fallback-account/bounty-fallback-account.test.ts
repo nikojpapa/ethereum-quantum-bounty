@@ -35,11 +35,11 @@ describe('BountyFallbackAccount', function () {
   let accountOwner: WalletLamport
   const ethersSigner = ethers.provider.getSigner()
 
-  const signatureBountyUtils = new SignatureBountyUtils()
+  const bountyUtils = new SignatureBountyUtils()
   let bounty: SignatureBounty
 
   beforeEach(async function () {
-    bounty = await signatureBountyUtils.deploySignatureBounty()
+    bounty = await bountyUtils.deployBounty()
 
     accounts = await ethers.provider.listAccounts()
     // ignore in geth.. this is just a sanity test. should be refactored to use a single-account mode..
@@ -161,7 +161,7 @@ describe('BountyFallbackAccount', function () {
 
     describe('after bounty is solved', () => {
       beforeEach(async () => {
-        const tx = await signatureBountyUtils.solveBounty(bounty)
+        const tx = await bountyUtils.solveBounty(bounty)
         await tx.wait()
       })
 
@@ -191,7 +191,7 @@ describe('BountyFallbackAccount', function () {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const updateSignatureBeforeBountyIsSolved = await updateSignature(userOpLamportInitial)
 
-        const tx = await signatureBountyUtils.solveBounty(bounty)
+        const tx = await bountyUtils.solveBounty(bounty)
         await tx.wait()
       })
 

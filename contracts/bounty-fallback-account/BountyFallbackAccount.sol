@@ -5,12 +5,12 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 import "../samples/SimpleAccount.sol";
-import "../bounty-contracts/prime-factoring-bounty/prime-factoring-bounty-with-predetermined-locks/PrimeFactoringBountyWithPredeterminedLocks.sol";
+import "../bounty-contracts/BountyContract.sol";
 
 contract BountyFallbackAccount is SimpleAccount {
     using ECDSA for bytes32;
 
-    PrimeFactoringBountyWithPredeterminedLocks private bountyContract;
+    BountyContract private bountyContract;
     bytes[][] private lamportKey;
     uint256 private numberOfTests;
     uint256 private testSizeInBytes;
@@ -24,7 +24,7 @@ contract BountyFallbackAccount is SimpleAccount {
     }
 
     function _initialize(address anOwner, bytes[][] memory publicKey, address payable bountyContractAddress) internal {
-        bountyContract = PrimeFactoringBountyWithPredeterminedLocks(bountyContractAddress);
+        bountyContract = BountyContract(bountyContractAddress);
 
         lamportKey = publicKey;
         numberOfTests = publicKey[0].length;
