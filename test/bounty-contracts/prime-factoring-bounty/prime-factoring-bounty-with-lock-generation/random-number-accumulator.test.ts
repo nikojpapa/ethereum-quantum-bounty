@@ -65,4 +65,24 @@ describe('RandomNumberAccumulator', () => {
     await randomNumberAccumulator.accumulate(primeWithAdditionalBitsThatMakeItComposite)
     expect(await randomNumberAccumulator.isDone()).to.be.eq(true)
   })
+
+  describe('prime candidate chosen, but is not actually prime', () => {
+    beforeEach(async () => {
+      const numberOfLocks = 1
+      const primesPerLock = 1
+      randomNumberAccumulator = await new RandomNumberAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, BYTES_PER_uint256)
+
+      const arbitraryCompositeNumber = 1
+      await randomNumberAccumulator.accumulate(arbitraryCompositeNumber)
+    })
+
+    it('should not be marked done', async () => {
+      expect(await randomNumberAccumulator.isDone()).to.be.eq(false)
+    })
+
+    it('should reset for the next qubit', async () => {
+      await randomNumberAccumulator.accumulate(_256BitPrime)
+      expect(await randomNumberAccumulator.isDone()).to.be.eq(true)
+    })
+  })
 })

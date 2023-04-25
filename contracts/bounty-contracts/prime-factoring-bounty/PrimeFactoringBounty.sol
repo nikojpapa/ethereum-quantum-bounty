@@ -29,8 +29,8 @@ abstract contract PrimeFactoringBounty is BountyContract {
   }
 
   modifier _locksHaveBeenSet() {
-    require(locks.length > 0, 'Locks array has not been initialized');
-    require(!BytesLib.equal(locks[locks.length - 1], ''), 'Locks values have not been set');
+    require(locks.length != 0, 'Locks array has not been initialized');
+    require(locks[locks.length - 1].length != 0, 'Locks values have not been set');
     _;
   }
 }
