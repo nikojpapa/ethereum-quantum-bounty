@@ -1,5 +1,5 @@
 import { ethers } from 'hardhat'
-import { RandomNumberAccumulator, RandomNumberAccumulator__factory } from '../../../typechain'
+import { RandomNumberAccumulator, RandomNumberAccumulator__factory } from '../../../../typechain'
 import { expect } from 'chai'
 import { BigNumber } from 'ethers'
 import { arrayify } from 'ethers/lib/utils'
@@ -41,7 +41,7 @@ describe('RandomNumberAccumulator', () => {
     expect.fail()
   })
 
-  it.only('should append sequential numbers to reach the required bytes', async () => {
+  it('should append sequential numbers to reach the required bytes', async () => {
     const numberOfLocks = 1
     const primesPerLock = 1
     const bytesPerPrime = BYTES_PER_uint256 * 2

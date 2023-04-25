@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.12;
 
-import "@openzeppelin/contracts/utils/Strings.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
-import "./BigNumbers.sol";
-import "./MillerRabin.sol";
+import "../BigNumbers.sol";
+import "../MillerRabin.sol";
 
 contract RandomNumberAccumulator {
   using BigNumbers for *;
@@ -40,15 +39,13 @@ contract RandomNumberAccumulator {
     }
     primeCandidate = BytesLib.concat(primeCandidate, abi.encodePacked(randomNumber));
     if (primeCandidate.length < bytesPerPrime) return;
+    primeCandidate = BytesLib.slice(primeCandidate, 0, bytesPerPrime);
 
-//    primeCandidate = BytesLib.slice(primeCandidate, 0, bytesPerPrime);
-
-//    BigNumber memory shift = BytesLib.slice(primeCandidate, 0, bytesPerPrime).init(false).shr(1).shl(1);
-//    BigNumber memory oddPrimeCandidate = shift.add(BigNumbers.one());
+//    BigNumber memory madeEven = primeCandidate.init(false).shr(1).shl(1);
+//    BigNumber memory oddPrimeCandidate = madeEven.add(BigNumbers.one());
 //    primeCandidate = oddPrimeCandidate.val;
 
     if (MillerRabin.isPrime(primeCandidate)) {
-      require(false, 'here');
       primeNumbers[randomPrimesCounter] = primeCandidate;
       randomPrimesCounter++;
 

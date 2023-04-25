@@ -3,7 +3,7 @@ import { BountyContract } from '../../typechain'
 import { bytes } from '../solidityTypes'
 
 abstract class BountyUtils {
-  public async deploySignatureBounty (): Promise<BountyContract> {
+  public async deployBounty (): Promise<BountyContract> {
     throw new Error('deploySignatureBounty() not implemented')
   }
 
