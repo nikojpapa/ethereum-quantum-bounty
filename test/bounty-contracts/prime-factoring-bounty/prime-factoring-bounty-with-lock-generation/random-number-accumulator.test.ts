@@ -85,4 +85,25 @@ describe('RandomNumberAccumulator', () => {
       expect(await randomNumberAccumulator.isDone()).to.be.eq(true)
     })
   })
+
+  it.only('should use the first and last primes given a composite in between when requiring two primes and one lock', async () => {
+    const numberOfLocks = 1
+    const primesPerLock = 2
+    randomNumberAccumulator = await new RandomNumberAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, BYTES_PER_uint256)
+
+    const second256BitPrime = BigNumber.from('0xf6876683602570c564a79e91b1887a8264a2119dee04cccd947e5f9603afd80b')
+    const arbitraryComposite = 1
+    await randomNumberAccumulator.accumulate(_256BitPrime)
+    await randomNumberAccumulator.accumulate(arbitraryComposite)
+    await randomNumberAccumulator.accumulate(second256BitPrime)
+
+    const lockGenerated = BigNumber.from(await randomNumberAccumulator.locks(0))
+    const lockExpected = BigNumber.from('0xbf17a49f966c36768e3538f08e090b67bf4047dc6d9b37fea73ba093280d5fc51abc03c6ea95cd422422d2202c9665d113b520cfd15bfb1588f2ac0f3ad87d21')
+    expect(await randomNumberAccumulator.isDone()).to.be.eq(true)
+    expect(lockGenerated.eq(lockExpected)).to.eq(true)
+  })
+
+  it('should exclusively use distinct primes', async () => {
+    expect.fail()
+  })
 })
