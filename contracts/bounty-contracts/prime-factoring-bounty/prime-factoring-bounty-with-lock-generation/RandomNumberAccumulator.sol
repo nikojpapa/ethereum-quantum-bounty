@@ -35,9 +35,9 @@ contract RandomNumberAccumulator {
     if (_primeCandidateIsReset()) {
       randomNumber |= (1 << 255);
       primeCandidate = abi.encodePacked(randomNumber);
-      return;
+    } else {
+      primeCandidate = BytesLib.concat(primeCandidate, abi.encodePacked(randomNumber));
     }
-    primeCandidate = BytesLib.concat(primeCandidate, abi.encodePacked(randomNumber));
     if (primeCandidate.length < bytesPerPrime) return;
     primeCandidate = BytesLib.slice(primeCandidate, 0, bytesPerPrime);
 

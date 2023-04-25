@@ -3,4 +3,4 @@ import PrimeFactoringBountyWithPredeterminedLocksUtils from './prime-factoring-b
 
 const bountyUtils = new PrimeFactoringBountyWithPredeterminedLocksUtils()
 
-describe('PrimeFactoringBounty', getBountyTest(bountyUtils))
+describe('PrimeFactoringBountyWithPredeterminedLocks', getBountyTest(bountyUtils))
