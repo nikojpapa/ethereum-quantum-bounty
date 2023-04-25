@@ -1,15 +1,15 @@
 import { ethers } from 'hardhat'
-import { MillerRabin, MillerRabin__factory } from '../../../typechain'
+import { MillerRabinTestHelper, MillerRabinTestHelper__factory } from '../../../typechain'
 import { expect } from 'chai'
 import { Buffer } from 'buffer'
 import { arrayify } from 'ethers/lib/utils'
 
 describe('Miller-Rabin Primality Test', () => {
   const ethersSigner = ethers.provider.getSigner()
-  let millerRabin: MillerRabin
+  let millerRabin: MillerRabinTestHelper
 
   before(async () => {
-    millerRabin = await new MillerRabin__factory(ethersSigner).deploy()
+    millerRabin = await new MillerRabinTestHelper__factory(ethersSigner).deploy()
   })
 
   it('should correctly identify some known prime numbers', async () => {

@@ -6,7 +6,7 @@ import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 import "../BountyContract.sol";
 import "./BigNumbers.sol";
-import "./MillerRabin.sol";
+import "./miller-rabin/MillerRabin.sol";
 
 abstract contract PrimeFactoringBounty is BountyContract {
   using BigNumbers for *;
