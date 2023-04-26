@@ -49,7 +49,7 @@ describe('RandomNumberAccumulator', () => {
     const firstHalf = _512BitPrimeWhereTheCenterBitIs0.shr(BYTES_PER_uint256 * BITS_PER_BYTE)
     const secondHalf = _512BitPrimeWhereTheCenterBitIs0.mask(BYTES_PER_uint256 * BITS_PER_BYTE)
     await randomNumberAccumulator.accumulate(firstHalf, MAX_GAS_LIMIT_OPTION)
-    await randomNumberAccumulator.accumulate(secondHalf)
+    await randomNumberAccumulator.accumulate(secondHalf, MAX_GAS_LIMIT_OPTION)
     expect(await randomNumberAccumulator.isDone()).to.be.eq(true)
   })
 
