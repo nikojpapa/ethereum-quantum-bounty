@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.12;
 
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 import "../BigNumbers.sol";
@@ -17,15 +18,15 @@ contract RandomNumberAccumulator {
   uint256 private primesPerLock;
   bytes[] private primeNumbers;
   bytes private primeCandidate;
-  uint8 private primesCounter = 0;
-
+  uint256 private primesCounter;
+  uint256 private lockCounter;
 
   constructor(uint256 numberOfLocksInit, uint256 primesPerLockInit, uint256 bytesPerPrimeInit) {
     numberOfLocks = numberOfLocksInit;
     locks = new bytes[](numberOfLocks);
     primesPerLock = primesPerLockInit;
     bytesPerPrime = bytesPerPrimeInit;
-    primeNumbers = new bytes[](primesPerLock * numberOfLocks);
+    primeNumbers = new bytes[](primesPerLock);
 
     _resetPrimeCandidate();
     isDone = false;
@@ -42,9 +43,7 @@ contract RandomNumberAccumulator {
 //    primeCandidate = oddPrimeCandidate.val;
 
     if (MillerRabin.isPrime(primeCandidate)) {
-      uint256 numberOfPrimesCurrentlyGoingIntoThisLock = primesCounter % primesPerLock;
-      uint256 startIndex = (primesCounter / primesPerLock) * primesPerLock;
-      for (uint256 i = startIndex; i < numberOfPrimesCurrentlyGoingIntoThisLock; i++) {
+      for (uint256 i = 0; i < primesCounter; i++) {
         bytes memory siblingPrime = primeNumbers[i];
         if (BytesLib.equal(siblingPrime, primeCandidate)) return;
       }
@@ -52,18 +51,25 @@ contract RandomNumberAccumulator {
       primeNumbers[primesCounter] = primeCandidate;
       primesCounter++;
 
-      if (primesCounter >= primeNumbers.length) {
-        for (uint256 lockCounter = 0; lockCounter < locks.length; lockCounter++) {
-          uint256 primeNumberIndexStart = lockCounter * primesPerLock;
-          uint256 primeNumberIndexEnd = primeNumberIndexStart + primesPerLock;
-
-          BigNumber memory product = BigNumbers.one();
-          for (uint256 primeComponentIndex = primeNumberIndexStart; primeComponentIndex < primeNumberIndexEnd; primeComponentIndex++) {
-            product = product.mul(primeNumbers[primeComponentIndex].init(false));
-          }
-          locks[lockCounter] = product.val;
+      if (primesCounter == primesPerLock) {
+        BigNumber memory lockCandidate = BigNumbers.one();
+        for (uint256 primeComponentIndex = 0; primeComponentIndex < primeNumbers.length; primeComponentIndex++) {
+          lockCandidate = lockCandidate.mul(primeNumbers[primeComponentIndex].init(false));
         }
-        isDone = true;
+
+        for (uint256 i = 0; i < lockCounter; i++) {
+          bytes memory lock = locks[i];
+          if (BytesLib.equal(lock, lockCandidate.val)) {
+            primesCounter--;
+            return;
+          }
+        }
+
+        locks[lockCounter] = lockCandidate.val;
+        lockCounter++;
+        primesCounter = 0;
+
+        if (lockCounter == locks.length) isDone = true;
       }
     }
     _resetPrimeCandidate();
