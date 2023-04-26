@@ -133,7 +133,7 @@ describe('RandomNumberAccumulator', () => {
       const primesPerLock = 1
       randomNumberAccumulator = await new RandomNumberAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, BYTES_PER_uint256)
 
-      const arbitraryCompositeNumber = 1
+      const arbitraryCompositeNumber = 4
       await randomNumberAccumulator.accumulate(arbitraryCompositeNumber)
     })
 
