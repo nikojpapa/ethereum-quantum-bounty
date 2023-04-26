@@ -40,7 +40,17 @@ describe('RandomNumberAccumulator', () => {
   })
 
   it('should not set the first bit to 1 after the first number', async () => {
-    expect.fail()
+    const numberOfLocks = 1
+    const primesPerLock = 1
+    const bytesPerPrime = BYTES_PER_uint256 * 2
+    randomNumberAccumulator = await new RandomNumberAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, bytesPerPrime)
+
+    const _512BitPrimeWhereTheCenterBitIs0 = BigNumber.from(arrayify('0xdf122aa1a14be816462ac30f4074c042e899276cfdf4f1c1943ba244edbc904a03faf637e7d554021160496e96dc35afc16758473036077af0ecda7290509a89'))
+    const firstHalf = _512BitPrimeWhereTheCenterBitIs0.shr(BYTES_PER_uint256 * BITS_PER_BYTE)
+    const secondHalf = _512BitPrimeWhereTheCenterBitIs0.mask(BYTES_PER_uint256 * BITS_PER_BYTE)
+    await randomNumberAccumulator.accumulate(firstHalf, MAX_GAS_LIMIT_OPTION)
+    await randomNumberAccumulator.accumulate(secondHalf)
+    expect(await randomNumberAccumulator.isDone()).to.be.eq(true)
   })
 
   it('should always set the last bit', async () => {
@@ -48,7 +58,14 @@ describe('RandomNumberAccumulator', () => {
   })
 
   it('should not accumulate if already done', async () => {
-    expect.fail()
+    const numberOfLocks = 1
+    const primesPerLock = 1
+    const bytesPerPrime = BYTES_PER_uint256
+    randomNumberAccumulator = await new RandomNumberAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, bytesPerPrime)
+
+    await randomNumberAccumulator.accumulate(_256BitPrimes[0], MAX_GAS_LIMIT_OPTION)
+    const tx = randomNumberAccumulator.accumulate(_256BitPrimes[0], MAX_GAS_LIMIT_OPTION)
+    await expect(tx).to.be.revertedWith('Already accumulated enough bits')
   })
 
   it('should append sequential numbers to reach the required bytes', async () => {
@@ -85,7 +102,7 @@ describe('RandomNumberAccumulator', () => {
     randomNumberAccumulator = await new RandomNumberAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, BYTES_PER_uint256)
 
     const second256BitPrime = BigNumber.from('0xf6876683602570c564a79e91b1887a8264a2119dee04cccd947e5f9603afd80b')
-    const arbitraryComposite = 0x4
+    const arbitraryComposite = 0x8
     await randomNumberAccumulator.accumulate(_256BitPrimes[0])
     await randomNumberAccumulator.accumulate(arbitraryComposite)
     await randomNumberAccumulator.accumulate(second256BitPrime)
@@ -102,7 +119,7 @@ describe('RandomNumberAccumulator', () => {
     randomNumberAccumulator = await new RandomNumberAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, BYTES_PER_uint256)
 
     const additionalPrime = '0xf891cd1b2f83e43a89b2f6f867e45faf8fbbe0c38b77e6d7f18b1db49752b05d'
-    const arbitraryComposite = 0x4
+    const arbitraryComposite = 0x8
     const orderToSend = [
       _256BitPrimes[0],
       _256BitPrimes[1],
@@ -133,7 +150,7 @@ describe('RandomNumberAccumulator', () => {
       const primesPerLock = 1
       randomNumberAccumulator = await new RandomNumberAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, BYTES_PER_uint256)
 
-      const arbitraryCompositeNumber = 4
+      const arbitraryCompositeNumber = 8
       await randomNumberAccumulator.accumulate(arbitraryCompositeNumber)
     })
 
