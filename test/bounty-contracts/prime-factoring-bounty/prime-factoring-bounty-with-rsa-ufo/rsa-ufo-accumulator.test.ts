@@ -20,75 +20,162 @@ class RandomBytes {
 
 describe('RsaUfoAccumulator', () => {
   const ethersSigner = ethers.provider.getSigner()
-
   const randomness = new Array(2).fill(0).map(() => new RandomBytes())
+
+  let rsaUfoAccumulator: RsaUfoAccumulator
 
   async function deployNewRsaUfoAccumulator (numberOfLocks: number, bytesPerPrime: number): Promise<RsaUfoAccumulator> {
     return await new RsaUfoAccumulator__factory(ethersSigner).deploy(numberOfLocks, bytesPerPrime)
   }
 
-  it('should return the bytes directly if they are the exact size of the lock', async () => {
-    const numberOfLocks = 1
-    const bytesPerPrime = 1
-    const rsaUfoAccumulator = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
+  async function expectDone (expectedValue: boolean): Promise<void> {
+    expect(await rsaUfoAccumulator.isDone()).to.be.eq(expectedValue)
+  }
 
-    await rsaUfoAccumulator.accumulate(randomness[0].buffer)
+  async function expectLock (lockNumber: number, expectedValue: string): Promise<void> {
+    expect(await rsaUfoAccumulator.locks(lockNumber)).to.be.eq(expectedValue)
+  }
 
-    expect(await rsaUfoAccumulator.isDone()).to.be.eq(true)
-    expect(await rsaUfoAccumulator.locks(0)).to.be.eq(randomness[0].hexWithPrefix)
+  describe('exact right size input', () => {
+
+    beforeEach(async () => {
+      const numberOfLocks = 1
+      const bytesPerPrime = 1
+      rsaUfoAccumulator = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
+
+      await rsaUfoAccumulator.accumulate(randomness[0].buffer)
+    })
+
+    it('should be marked as done', async () => {
+      await expectDone(true)
+    })
+
+    it('should have a lock matching the input', async () => {
+      await expectLock(0, randomness[0].hexWithPrefix)
+    })
   })
 
-  it('should slice excess bytes', async () => {
-    const numberOfLocks = 1
-    const bytesPerPrime = 1
-    const rsaUfoAccumulator = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
+  describe('slicing off extra bytes', () => {
+    beforeEach(async () => {
+      const numberOfLocks = 1
+      const bytesPerPrime = 1
+      rsaUfoAccumulator = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
 
-    await rsaUfoAccumulator.accumulate(Buffer.concat([randomness[0].buffer, randomness[1].buffer]))
+      await rsaUfoAccumulator.accumulate(Buffer.concat([randomness[0].buffer, randomness[1].buffer]))
+    })
 
-    expect(await rsaUfoAccumulator.isDone()).to.be.eq(true)
-    expect(await rsaUfoAccumulator.locks(0)).to.be.eq(randomness[0].hexWithPrefix)
+    it('should be marked as done', async () => {
+      await expectDone(true)
+    })
+
+    it('should have a lock with only the necessary bytes', async () => {
+      await expectLock(0, randomness[0].hexWithPrefix)
+    })
   })
 
-  it('should require multiple accumulations if first is not enough', async () => {
-    const numberOfLocks = 1
-    const bytesPerPrime = 2
-    const rsaUfoAccumulator = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
+  describe('multiple accumulations per lock', () => {
+    beforeEach(async () => {
+      const numberOfLocks = 1
+      const bytesPerPrime = 2
+      rsaUfoAccumulator = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
 
-    await rsaUfoAccumulator.accumulate(randomness[0].buffer)
-    expect(await rsaUfoAccumulator.isDone()).to.be.eq(false)
-    expect(await rsaUfoAccumulator.locks(0)).to.be.eq('0x')
+      await rsaUfoAccumulator.accumulate(randomness[0].buffer)
+    })
 
-    await rsaUfoAccumulator.accumulate(randomness[1].buffer)
-    expect(await rsaUfoAccumulator.isDone()).to.be.eq(true)
-    expect(await rsaUfoAccumulator.locks(0)).to.be.eq(`0x${randomness[0].hexString}${randomness[1].hexString}`)
+    describe('first accumulation', () => {
+      it('should not be marked as done', async () => {
+        await expectDone(false)
+      })
+
+      it('should have no locks', async () => {
+        await expectLock(0, '0x')
+      })
+    })
+
+    describe('second accumulation', () => {
+      beforeEach(async () => {
+        await rsaUfoAccumulator.accumulate(randomness[1].buffer)
+      })
+
+      it('should be marked as done', async () => {
+        await expectDone(true)
+      })
+
+      it('should have a lock equal to both inputs', async () => {
+        await expectLock(0, `0x${randomness[0].hexString}${randomness[1].hexString}`)
+      })
+    })
   })
 
-  it('should not finish until all locks have been acquired', async () => {
-    const numberOfLocks = 2
-    const bytesPerPrime = 1
-    const rsaUfoAccumulator = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
+  describe('multiple locks', () => {
+    beforeEach(async () => {
+      const numberOfLocks = 2
+      const bytesPerPrime = 1
+      rsaUfoAccumulator = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
 
-    await rsaUfoAccumulator.accumulate(randomness[0].buffer)
-    expect(await rsaUfoAccumulator.isDone()).to.be.eq(false)
-    expect(await rsaUfoAccumulator.locks(0)).to.be.eq(randomness[0].hexWithPrefix)
+      await rsaUfoAccumulator.accumulate(randomness[0].buffer)
+    })
 
-    await rsaUfoAccumulator.accumulate(randomness[1].buffer)
-    expect(await rsaUfoAccumulator.isDone()).to.be.eq(true)
-    expect(await rsaUfoAccumulator.locks(0)).to.be.eq(randomness[0].hexWithPrefix)
-    expect(await rsaUfoAccumulator.locks(1)).to.be.eq(randomness[1].hexWithPrefix)
+    describe('first accumulation', () => {
+      it('should not be marked as done', async () => {
+        await expectDone(false)
+      })
+
+      it('should have the first lock equal to the input', async () => {
+        await expectLock(0, randomness[0].hexWithPrefix)
+      })
+
+      it('should have no second lock', async () => {
+        await expectLock(1, '0x')
+      })
+    })
+
+    describe('second accumulation', () => {
+      beforeEach(async () => {
+        await rsaUfoAccumulator.accumulate(randomness[1].buffer)
+      })
+
+      it('should be marked as done', async () => {
+        await expectDone(true)
+      })
+
+      it('should have the first lock equal to the first input', async () => {
+        await expectLock(0, randomness[0].hexWithPrefix)
+      })
+
+      it('should have the second lock equal to the second input', async () => {
+        await expectLock(1, randomness[1].hexWithPrefix)
+      })
+    })
   })
 
-  it('should not continue to accumulate if already done', async () => {
-    const numberOfLocks = 1
-    const bytesPerPrime = 1
-    const rsaUfoAccumulator = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
+  describe('already done', () => {
+    beforeEach(async () => {
+      const numberOfLocks = 1
+      const bytesPerPrime = 1
+      rsaUfoAccumulator = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
 
-    await rsaUfoAccumulator.accumulate(randomness[0].buffer)
-    expect(await rsaUfoAccumulator.isDone()).to.be.eq(true)
-    expect(await rsaUfoAccumulator.locks(0)).to.be.eq(randomness[0].hexWithPrefix)
+      await rsaUfoAccumulator.accumulate(randomness[0].buffer)
+    })
 
-    await rsaUfoAccumulator.accumulate(randomness[1].buffer)
-    expect(await rsaUfoAccumulator.isDone()).to.be.eq(true)
-    expect(await rsaUfoAccumulator.locks(0)).to.be.eq(randomness[0].hexWithPrefix)
+    describe('first accumulation', () => {
+      it('should be marked as done', async () => {
+        await expectDone(true)
+      })
+
+      it('should have the first lock equal to the input', async () => {
+        await expectLock(0, randomness[0].hexWithPrefix)
+      })
+    })
+
+    describe('unnecessary, additional accumulation', () => {
+      it('should be marked as done', async () => {
+        await expectDone(true)
+      })
+
+      it('should have the first lock equal to the first input', async () => {
+        await expectLock(0, randomness[0].hexWithPrefix)
+      })
+    })
   })
 })
