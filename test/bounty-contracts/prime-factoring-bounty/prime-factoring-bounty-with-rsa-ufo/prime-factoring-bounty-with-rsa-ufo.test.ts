@@ -3,4 +3,6 @@ import PrimeFactoringBountyWithRsaUfoUtils from './prime-factoring-bounty-with-r
 
 const puzzleUtils = new PrimeFactoringBountyWithRsaUfoUtils()
 
-describe('PrimeFactoringBountyWithRsaUfo', getBountyTest(puzzleUtils))
+describe('PrimeFactoringBountyWithRsaUfo', () => {
+  it('should generate locks ')
+})

@@ -24,8 +24,9 @@ contract PrimeFactoringPuzzleWithRsaUfo is PrimeFactoringBounty {
   BigNumber BYTES_PER_256_NUMBER = 32.init(false);
 
   constructor(uint256 numberOfLocks, uint256 primeByteLengthInit) {
-    locks = new bytes[](numberOfLocks);
+    numberOfLocks = numberOfLocks;
     primeByteLength = primeByteLengthInit;
+    locks = new bytes[](numberOfLocks);
 
     BigNumber memory lockByteLength = 3.init(false).mul(primeByteLength.init(false));
 
