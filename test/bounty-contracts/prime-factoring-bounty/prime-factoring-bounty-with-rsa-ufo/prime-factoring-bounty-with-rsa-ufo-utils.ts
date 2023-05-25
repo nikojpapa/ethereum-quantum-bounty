@@ -30,12 +30,12 @@ class PrimeFactoringBountyWithRsaUfoUtils extends BountyUtils {
   }
 
   public async solveBounty (bounty: BountyContract): Promise<Promise<ContractTransaction>> {
-    const primes = this._getPrimes()
+    const primes = await this._getPrimes(bounty)
     return this._attemptBountySolve(bounty, primes)
   }
 
   public async solveBountyIncorrectly (bounty: BountyContract): Promise<Promise<ContractTransaction>> {
-    const primes = this._getPrimes()
+    const primes = await this._getPrimes(bounty)
     const incorrectPrimes = primes.map(_ => primes[0])
     return this._attemptBountySolve(bounty, incorrectPrimes)
   }
@@ -45,12 +45,25 @@ class PrimeFactoringBountyWithRsaUfoUtils extends BountyUtils {
     return bounty.connect(arbitraryUser).widthdraw(primes)
   }
 
-  private _getPrimes (bounty: BountyContract): bytes[][] {
-    const solutions = (await this.getLocks(bounty)).forEach(lock => {
-      const listOfPrimes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61]
-      for (const prime of listOfPrimes) {
-        BigNumber.from(lock).
+  private async _getPrimes (bounty: BountyContract): Promise<bytes[][]> {
+    const listOfPrimes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61]
+      .map(n => BigNumber.from(n))
+    return (await this.getLocks(bounty)).map(lock => {
+      let lockAsNumber = BigNumber.from(lock)
+
+      const solution = []
+
+      while (!lockAsNumber.eq(1)) {
+        for (const prime of listOfPrimes) {
+          if (!lockAsNumber.mod(prime).eq(0)) {
+            solution.push(Buffer.from(prime.toHexString()))
+            lockAsNumber = lockAsNumber.div(prime)
+            break
+          }
+        }
       }
+
+      return solution
     })
   }
 }

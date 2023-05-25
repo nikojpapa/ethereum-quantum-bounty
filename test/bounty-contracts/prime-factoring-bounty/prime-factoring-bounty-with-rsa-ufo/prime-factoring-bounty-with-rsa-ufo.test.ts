@@ -3,4 +3,4 @@ import PrimeFactoringBountyWithRsaUfoUtils from './prime-factoring-bounty-with-r
 
 const puzzleUtils = new PrimeFactoringBountyWithRsaUfoUtils()
 
-describe('PrimeFactoringBountyWithRsaUfoUtils', getBountyTest(puzzleUtils))
+describe('PrimeFactoringBountyWithRsaUfo', getBountyTest(puzzleUtils))

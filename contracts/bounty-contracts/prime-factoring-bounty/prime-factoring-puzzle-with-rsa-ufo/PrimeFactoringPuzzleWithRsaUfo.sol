@@ -2,6 +2,7 @@
 pragma solidity ^0.8.12;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 import "../BigNumbers.sol";
 import "../PrimeFactoringBounty.sol";
@@ -18,12 +19,34 @@ contract PrimeFactoringPuzzleWithRsaUfo is PrimeFactoringBounty {
   using BigNumbers for *;
 
   uint256 public numberOfLocks;
-  uint256 primeBitLength;
+  uint256 primeByteLength;
 
-  constructor(uint256 numberOfLocks, uint256 primeBitLengthInit) {
+  BigNumber BYTES_PER_256_NUMBER = 32.init(false);
+
+  constructor(uint256 numberOfLocks, uint256 primeByteLengthInit) {
     locks = new bytes[](numberOfLocks);
-    primeBitLength = primeBitLengthInit;
+    primeByteLength = primeByteLengthInit;
 
-    BigNumber memory numberOfBitsNeeded = 3.init(false).mul(primeBitLength.init(false)).mul(numberOfLocks.init(false));
+    BigNumber memory lockByteLength = 3.init(false).mul(primeByteLength.init(false));
+
+    BigNumber memory oneRandomNumberLessThanNecessary = lockByteLength.sub(BYTES_PER_256_NUMBER);
+    uint256 bytesRemaining = BytesLib.toUint256(lockByteLength.mod(BYTES_PER_256_NUMBER).val, 0);
+    for (uint256 lockNumber = 0; lockNumber < numberOfLocks; lockNumber++) {
+      bytes memory lockBytes = "";
+      while (oneRandomNumberLessThanNecessary.gt(lockBytes.length.init(false))) {
+        bytes memory randomNumber = _getRandomNumber(lockBytes);
+        lockBytes = BytesLib.concat(lockBytes, randomNumber);
+      }
+
+      bytes memory randomNumber = _getRandomNumber(lockBytes);
+      locks[lockNumber] = BytesLib.concat(lockBytes, BytesLib.slice(randomNumber, 0, bytesRemaining));
+    }
+  }
+
+  /*
+   * From https://www.geeksforgeeks.org/random-number-generator-in-solidity-using-keccak256/
+   */
+  function _getRandomNumber(bytes memory nonce) private returns (bytes memory) {
+    return abi.encodePacked(keccak256(abi.encodePacked(block.timestamp, msg.sender, nonce)));
   }
 }
