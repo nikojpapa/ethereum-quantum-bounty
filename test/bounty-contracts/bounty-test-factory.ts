@@ -138,6 +138,15 @@ function getBountyTest (bountyUtils: BountyUtils) {
         expect(timestamp).to.eq(timestampBefore)
       })
     })
+
+    it('should be able to override a commit', async () => {
+      const arbitraryValue1 = '0x0000000000000000000000000000000000000000000000000000000000000001'
+      const arbitraryValue2 = '0x0000000000000000000000000000000000000000000000000000000000000002'
+      await bounty.commitSolution(Buffer.from(arrayify(arbitraryValue1)))
+      await bounty.commitSolution(Buffer.from(arrayify(arbitraryValue2)))
+      const [hash] = await bounty.callStatic.getMyCommit()
+      expect(hash).to.be.eq(arbitraryValue2)
+    })
   }
 }
 
