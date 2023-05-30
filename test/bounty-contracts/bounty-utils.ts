@@ -11,11 +11,11 @@ abstract class BountyUtils {
     throw new Error('getLocks() not implemented')
   }
 
-  public async solveBounty (bounty: BountyContract): Promise<Promise<ContractTransaction>> {
+  public async solveBounty (bounty: BountyContract): Promise<ContractTransaction> {
     throw new Error('solveBounty() not implemented')
   }
 
-  public async solveBountyIncorrectly (bounty: BountyContract): Promise<Promise<ContractTransaction>> {
+  public async solveBountyIncorrectly (bounty: BountyContract): Promise<ContractTransaction> {
     throw new Error('solveBountyIncorrectly() not implemented')
   }
 }

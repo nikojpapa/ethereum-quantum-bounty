@@ -7,15 +7,41 @@ abstract contract BountyContract {
   bytes[] public locks;
   bool public solved;
 
+  struct Commit {
+    bytes32 solutionHash;
+    uint commitTime;
+    bool revealed;
+  }
+  mapping(address => Commit) private commits;
+
   modifier requireUnsolved() {
     require(!solved, 'Already solved');
     _;
   }
 
-  function widthdraw(bytes[][] memory solutions) public requireUnsolved {
+  function commitSolution(bytes32 solutionHash) public requireUnsolved {
+    Commit storage commit = commits[msg.sender];
+    commit.solutionHash = solutionHash;
+    commit.commitTime = block.timestamp;
+    commit.revealed = false;
+  }
+
+  function widthdraw(bytes[][] memory solutions, string memory secret) public requireUnsolved {
+    require(_verifyReveal(solutions, secret), "Solution hash doesn't match");
     require(_verifySolutions(solutions), 'Invalid solution');
     solved = true;
     _sendBountyToSolver();
+  }
+
+  function _verifyReveal(bytes[][] memory solutions, string memory secret) private view returns (bool) {
+    Commit storage commit = commits[msg.sender];
+    require(commit.commitTime != 0, 'Not committed yet');
+    require(commit.commitTime < block.timestamp, 'Cannot reveal in the same block');
+    require(!commit.revealed, 'Already committed and revealed');
+
+    bytes memory solutionEncoding = abi.encode(msg.sender, solutions, secret);
+    bytes32 solutionHash = keccak256(solutionEncoding);
+    return solutionHash == commit.solutionHash;
   }
 
   function _verifySolutions(bytes[][] memory solutions) internal view virtual returns (bool);

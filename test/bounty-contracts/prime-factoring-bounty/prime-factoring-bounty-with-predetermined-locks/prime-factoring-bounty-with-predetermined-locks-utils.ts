@@ -1,5 +1,5 @@
 import { bytes } from '../../../solidityTypes'
-import { ethers } from 'hardhat'
+import { ethers, web3 } from 'hardhat'
 import { ContractTransaction } from 'ethers'
 import BountyUtils from '../../bounty-utils'
 import {
@@ -9,6 +9,7 @@ import {
 } from '../../../../typechain'
 import { arrayify } from 'ethers/lib/utils'
 import { Buffer } from 'buffer'
+import { keccak256 } from 'ethereumjs-util'
 
 class PrimeFactoringBountyWithPredeterminedLocksUtils extends BountyUtils {
   private readonly locksAndKeys = [
@@ -37,20 +38,37 @@ class PrimeFactoringBountyWithPredeterminedLocksUtils extends BountyUtils {
     return Promise.resolve(this.locksAndKeys.map(x => Buffer.from(arrayify(x.lock))))
   }
 
-  public async solveBounty (bounty: BountyContract): Promise<Promise<ContractTransaction>> {
+  public async solveBounty (bounty: BountyContract): Promise<ContractTransaction> {
     const primes = this._getPrimes()
     return this._attemptBountySolve(bounty, primes)
   }
 
-  public async solveBountyIncorrectly (bounty: BountyContract): Promise<Promise<ContractTransaction>> {
+  public async solveBountyIncorrectly (bounty: BountyContract): Promise<ContractTransaction> {
     const primes = this._getPrimes()
     const incorrectPrimes = primes.map(_ => primes[0])
     return this._attemptBountySolve(bounty, incorrectPrimes)
   }
 
-  private async _attemptBountySolve (bounty: BountyContract, primes: bytes[][]): Promise<Promise<ContractTransaction>> {
+  private async _attemptBountySolve (bounty: BountyContract, primes: bytes[][]): Promise<ContractTransaction> {
     const arbitraryUser = ethers.provider.getSigner(1)
-    return bounty.connect(arbitraryUser).widthdraw(primes)
+    const arbitrarySecret = 'arbitrarySecret'
+
+    const address = await arbitraryUser.getAddress()
+    const solutionEncoding = web3.eth.abi.encodeParameters(
+      [
+        'address',
+        'bytes[][]',
+        'string'
+      ], [
+        address,
+        primes,
+        arbitrarySecret
+      ]
+    )
+    const solutionHash = keccak256(Buffer.from(arrayify(solutionEncoding)))
+
+    await bounty.connect(arbitraryUser).commitSolution(solutionHash)
+    return bounty.connect(arbitraryUser).widthdraw(primes, arbitrarySecret)
   }
 
   private _getPrimes (): bytes[][] {

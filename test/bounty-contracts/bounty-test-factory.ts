@@ -86,7 +86,7 @@ function getBountyTest (bountyUtils: BountyUtils) {
 
     describe('Lock generation', () => {
       it('should set locks as publicly available', async () => {
-        const locks = await bountyUtils.getLocks()
+        const locks = await bountyUtils.getLocks(bounty)
         for (let i = 0; i < locks.length; i++) {
           const expectedPublicKey = locks[i]
           const bountyLock = Buffer.from(arrayify(await bounty.locks(i)))
