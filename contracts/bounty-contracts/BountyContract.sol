@@ -26,7 +26,7 @@ abstract contract BountyContract {
 
   function getMyCommit() public view returns (bytes32, uint) {
     Commit storage commit = commits[msg.sender];
-    require(commit.commitTime != 0, "Not committed yet");
+    require(commit.commitTime != 0, 'Not committed yet');
     return (commit.solutionHash, commit.commitTime);
   }
 

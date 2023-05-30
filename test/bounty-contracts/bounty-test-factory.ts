@@ -126,26 +126,38 @@ function getBountyTest (bountyUtils: BountyUtils) {
     })
 
     describe('Commit reveal', () => {
+      const arbitrarySolutionHash = '0x0000000000000000000000000000000000000000000000000000000000000001'
+      const arbitrarySolutionHashBuffer = Buffer.from(arrayify(arbitrarySolutionHash))
+
       it('should be able to retrieve commit info', async () => {
-        const arbitraryValue = '0x0000000000000000000000000000000000000000000000000000000000000001'
-        await bounty.commitSolution(Buffer.from(arrayify(arbitraryValue)))
+        await bounty.commitSolution(arbitrarySolutionHashBuffer)
         const [hash, timestamp] = await bounty.callStatic.getMyCommit()
-        expect(hash).to.be.eq(arbitraryValue)
+        expect(hash).to.be.eq(arbitrarySolutionHash)
 
         const blockNumBefore = await ethers.provider.getBlockNumber()
         const blockBefore = await ethers.provider.getBlock(blockNumBefore)
         const timestampBefore = blockBefore.timestamp
         expect(timestamp).to.eq(timestampBefore)
       })
-    })
 
-    it('should be able to override a commit', async () => {
-      const arbitraryValue1 = '0x0000000000000000000000000000000000000000000000000000000000000001'
-      const arbitraryValue2 = '0x0000000000000000000000000000000000000000000000000000000000000002'
-      await bounty.commitSolution(Buffer.from(arrayify(arbitraryValue1)))
-      await bounty.commitSolution(Buffer.from(arrayify(arbitraryValue2)))
-      const [hash] = await bounty.callStatic.getMyCommit()
-      expect(hash).to.be.eq(arbitraryValue2)
+      it('should be able to override a commit', async () => {
+        const arbitrarySolutionHash2 = '0x0000000000000000000000000000000000000000000000000000000000000002'
+        await bounty.commitSolution(arbitrarySolutionHashBuffer)
+        await bounty.commitSolution(Buffer.from(arrayify(arbitrarySolutionHash2)))
+        const [hash] = await bounty.callStatic.getMyCommit()
+        expect(hash).to.be.eq(arbitrarySolutionHash2)
+      })
+
+      it('should revert getting my commit if no commit was made', async () => {
+        const tx = bounty.getMyCommit()
+        await expect(tx).to.be.revertedWith('Not committed yet')
+      })
+
+      it('should not allow commits if already solved', async () => {
+        await bountyUtils.solveBounty(bounty)
+        const tx = bounty.commitSolution(arbitrarySolutionHashBuffer)
+        await expect(tx).to.be.revertedWith('Already solved')
+      })
     })
   }
 }
