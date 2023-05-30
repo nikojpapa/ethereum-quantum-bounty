@@ -124,6 +124,20 @@ function getBountyTest (bountyUtils: BountyUtils) {
         })
       })
     })
+
+    describe('Commit reveal', () => {
+      it('should be able to retrieve commit info', async () => {
+        const arbitraryValue = '0x0000000000000000000000000000000000000000000000000000000000000001'
+        await bounty.commitSolution(Buffer.from(arrayify(arbitraryValue)))
+        const [hash, timestamp] = await bounty.callStatic.getMyCommit()
+        expect(hash).to.be.eq(arbitraryValue)
+
+        const blockNumBefore = await ethers.provider.getBlockNumber()
+        const blockBefore = await ethers.provider.getBlock(blockNumBefore)
+        const timestampBefore = blockBefore.timestamp
+        expect(timestamp).to.eq(timestampBefore)
+      })
+    })
   }
 }
 

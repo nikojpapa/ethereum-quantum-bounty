@@ -53,14 +53,13 @@ class PrimeFactoringBountyWithPredeterminedLocksUtils extends BountyUtils {
     const arbitraryUser = ethers.provider.getSigner(1)
     const arbitrarySecret = 'arbitrarySecret'
 
-    const address = await arbitraryUser.getAddress()
     const solutionEncoding = web3.eth.abi.encodeParameters(
       [
         'address',
         'bytes[][]',
         'string'
       ], [
-        address,
+        await arbitraryUser.getAddress(),
         primes,
         arbitrarySecret
       ]

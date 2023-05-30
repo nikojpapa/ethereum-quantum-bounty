@@ -10,7 +10,6 @@ abstract contract BountyContract {
   struct Commit {
     bytes32 solutionHash;
     uint commitTime;
-    bool revealed;
   }
   mapping(address => Commit) private commits;
 
@@ -23,7 +22,12 @@ abstract contract BountyContract {
     Commit storage commit = commits[msg.sender];
     commit.solutionHash = solutionHash;
     commit.commitTime = block.timestamp;
-    commit.revealed = false;
+  }
+
+  function getMyCommit() public view returns (bytes32, uint) {
+    Commit storage commit = commits[msg.sender];
+    require(commit.commitTime != 0, "Not committed yet");
+    return (commit.solutionHash, commit.commitTime);
   }
 
   function widthdraw(bytes[][] memory solutions, string memory secret) public requireUnsolved {
@@ -37,7 +41,6 @@ abstract contract BountyContract {
     Commit storage commit = commits[msg.sender];
     require(commit.commitTime != 0, 'Not committed yet');
     require(commit.commitTime < block.timestamp, 'Cannot reveal in the same block');
-    require(!commit.revealed, 'Already committed and revealed');
 
     bytes memory solutionEncoding = abi.encode(msg.sender, solutions, secret);
     bytes32 solutionHash = keccak256(solutionEncoding);
