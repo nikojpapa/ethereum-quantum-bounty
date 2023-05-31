@@ -36,7 +36,7 @@ describe('PrimeFactoringBountyWithRsaUfo', () => {
         .map(async (_, i) => primeFactoringBountyWithRsaUfo.locks(i)))
       expect(locks.length).to.be.eq(numberOfLocks)
       expect(locks.every(lock => lock.length === expectedLockLength)).to.be.eq(true)
-      expect(locks.every(lock => lock !== locks[0])).to.be.eq(true)
+      expect(locks.slice(1).every(lock => lock !== locks[0])).to.be.eq(true)
     }
 
     it('should correctly handle the trivial case', async () => {

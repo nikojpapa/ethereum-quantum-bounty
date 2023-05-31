@@ -37,7 +37,6 @@ describe('RsaUfoAccumulator', () => {
   }
 
   describe('exact right size input', () => {
-
     beforeEach(async () => {
       const numberOfLocks = 1
       const bytesPerPrime = 1
