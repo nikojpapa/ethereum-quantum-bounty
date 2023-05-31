@@ -1,4 +1,4 @@
-import { BigNumber } from 'ethers'
+import { BigNumber, ContractTransaction } from 'ethers'
 import { JsonRpcSigner } from '@ethersproject/providers/src.ts/json-rpc-provider'
 import { ethers, network } from 'hardhat'
 import { expect } from 'chai'
@@ -21,6 +21,23 @@ function getBountyTest (bountyUtils: BountyUtils) {
       let arbitraryUser: JsonRpcSigner
       let previousBalance: BigNumber
 
+      async function getLastTransactionGasCost (numberOfTransactions: number): Promise<BigNumber> {
+        // Thanks to https://ethereum.stackexchange.com/a/140971/120101
+        const latestBlock = await ethers.provider.getBlock('latest')
+        const latestGasUsages = await Promise.all(new Array(numberOfTransactions).fill(0)
+          .map(async (_, i) => {
+            const block = await ethers.provider.getBlock(latestBlock.number - i)
+            const latestTxHash = block.transactions[block.transactions.length - 1]
+            const latestTxReceipt = await ethers.provider.getTransactionReceipt(
+              latestTxHash as string
+            )
+            const latestTxGasUsage = latestTxReceipt.gasUsed
+            const latestTxGasPrice = latestTxReceipt.effectiveGasPrice
+            return latestTxGasUsage.mul(latestTxGasPrice)
+          }))
+        return latestGasUsages.reduce((total, amount) => total.add(amount))
+      }
+
       before(async () => {
         arbitraryUser = ethers.provider.getSigner(1)
       })
@@ -31,12 +48,8 @@ function getBountyTest (bountyUtils: BountyUtils) {
       })
 
       describe('Correct Signatures', () => {
-        let gasUsed: BigNumber = BigNumber.from(0)
-
         beforeEach(async () => {
-          const tx = await bountyUtils.solveBounty(bounty)
-          const receipt = await tx.wait()
-          gasUsed = BigNumber.from(receipt.cumulativeGasUsed).mul(BigNumber.from(receipt.effectiveGasPrice))
+          await bountyUtils.solveBounty(bounty)
         })
 
         it('should have a bounty of zero afterwards', async () => {
@@ -44,6 +57,7 @@ function getBountyTest (bountyUtils: BountyUtils) {
         })
 
         it('should send the bounty to the user', async () => {
+          const gasUsed = await getLastTransactionGasCost(2)
           const newBalance = await arbitraryUser.getBalance()
           const expectedBalance = previousBalance.sub(gasUsed).add(arbitraryBountyAmount)
           expect(newBalance).to.equal(expectedBalance)
@@ -75,8 +89,9 @@ function getBountyTest (bountyUtils: BountyUtils) {
         })
 
         it('should not send the bounty to the user', async () => {
+          const latestTXGasCosts = await getLastTransactionGasCost(1)
           const newBalance = await arbitraryUser.getBalance()
-          expect(newBalance).equal(previousBalance)
+          expect(newBalance).equal(previousBalance.sub(latestTXGasCosts))
         })
 
         it('should keep the bounty as unsolved', async () => {
