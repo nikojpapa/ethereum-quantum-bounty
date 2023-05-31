@@ -75,6 +75,14 @@ class PrimeFactoringBountyWithPredeterminedLocksUtils extends BountyUtils {
       primesForLock.map(prime =>
         Buffer.from(arrayify(prime))))
   }
+
+  public async getLatestSolvedGasCost (): Promise<BigNumber> {
+    return await this.getLastTransactionGasCost(2)
+  }
+
+  public async getLatestSolvedIncorrectlyGasCost (): Promise<BigNumber> {
+    return await this.getLastTransactionGasCost(2)
+  }
 }
 
 export default PrimeFactoringBountyWithPredeterminedLocksUtils

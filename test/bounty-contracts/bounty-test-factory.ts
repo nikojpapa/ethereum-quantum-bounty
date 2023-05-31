@@ -21,23 +21,6 @@ function getBountyTest (bountyUtils: BountyUtils) {
       let arbitraryUser: JsonRpcSigner
       let previousBalance: BigNumber
 
-      async function getLastTransactionGasCost (numberOfTransactions: number): Promise<BigNumber> {
-        // Thanks to https://ethereum.stackexchange.com/a/140971/120101
-        const latestBlock = await ethers.provider.getBlock('latest')
-        const latestGasUsages = await Promise.all(new Array(numberOfTransactions).fill(0)
-          .map(async (_, i) => {
-            const block = await ethers.provider.getBlock(latestBlock.number - i)
-            const latestTxHash = block.transactions[block.transactions.length - 1]
-            const latestTxReceipt = await ethers.provider.getTransactionReceipt(
-              latestTxHash as string
-            )
-            const latestTxGasUsage = latestTxReceipt.gasUsed
-            const latestTxGasPrice = latestTxReceipt.effectiveGasPrice
-            return latestTxGasUsage.mul(latestTxGasPrice)
-          }))
-        return latestGasUsages.reduce((total, amount) => total.add(amount))
-      }
-
       before(async () => {
         arbitraryUser = ethers.provider.getSigner(1)
       })
@@ -57,7 +40,7 @@ function getBountyTest (bountyUtils: BountyUtils) {
         })
 
         it('should send the bounty to the user', async () => {
-          const gasUsed = await getLastTransactionGasCost(2)
+          const gasUsed = await bountyUtils.getLatestSolvedGasCost()
           const newBalance = await arbitraryUser.getBalance()
           const expectedBalance = previousBalance.sub(gasUsed).add(arbitraryBountyAmount)
           expect(newBalance).to.equal(expectedBalance)
@@ -89,7 +72,7 @@ function getBountyTest (bountyUtils: BountyUtils) {
         })
 
         it('should not send the bounty to the user', async () => {
-          const latestTXGasCosts = await getLastTransactionGasCost(2)
+          const latestTXGasCosts = await bountyUtils.getLatestSolvedIncorrectlyGasCost()
           const newBalance = await arbitraryUser.getBalance()
           expect(newBalance).equal(previousBalance.sub(latestTXGasCosts))
         })

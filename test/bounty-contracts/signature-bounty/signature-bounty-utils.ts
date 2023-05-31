@@ -2,7 +2,7 @@ import { JsonRpcSigner } from '@ethersproject/providers/src.ts/json-rpc-provider
 import { bytes } from '../../solidityTypes'
 import { ethers, web3 } from 'hardhat'
 import { BountyContract, SignatureBounty, SignatureBounty__factory } from '../../../typechain'
-import { ContractTransaction } from 'ethers'
+import { BigNumber, ContractTransaction } from 'ethers'
 import BountyUtils from '../bounty-utils'
 import { arrayify } from 'ethers/lib/utils'
 import { keccak256 } from 'ethereumjs-util'
@@ -88,6 +88,14 @@ class SignatureBountyUtils extends BountyUtils {
       }
     }
     return this._signers
+  }
+
+  public async getLatestSolvedGasCost (): Promise<BigNumber> {
+    return await this.getLastTransactionGasCost(2)
+  }
+
+  public async getLatestSolvedIncorrectlyGasCost (): Promise<BigNumber> {
+    return await this.getLastTransactionGasCost(1)
   }
 }
 
