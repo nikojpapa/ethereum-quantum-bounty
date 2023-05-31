@@ -1,6 +1,6 @@
 import { bytes } from '../../../solidityTypes'
 import { ethers, web3 } from 'hardhat'
-import { ContractTransaction } from 'ethers'
+import { BigNumber, ContractTransaction } from 'ethers'
 import BountyUtils from '../../bounty-utils'
 import {
   BountyContract,
@@ -10,6 +10,8 @@ import {
 import { arrayify } from 'ethers/lib/utils'
 import { Buffer } from 'buffer'
 import { keccak256 } from 'ethereumjs-util'
+
+const MAX_GAS_LIMIT_OPTION = { gasLimit: BigNumber.from('0x1c9c380') }
 
 class PrimeFactoringBountyWithPredeterminedLocksUtils extends BountyUtils {
   private readonly locksAndKeys = [
@@ -63,8 +65,8 @@ class PrimeFactoringBountyWithPredeterminedLocksUtils extends BountyUtils {
     )
     const solutionHash = keccak256(Buffer.from(arrayify(solutionEncoding)))
 
-    await bounty.connect(arbitraryUser).commitSolution(solutionHash)
-    return bounty.connect(arbitraryUser).widthdraw(primes)
+    await bounty.connect(arbitraryUser).commitSolution(solutionHash, MAX_GAS_LIMIT_OPTION)
+    return bounty.connect(arbitraryUser).widthdraw(primes, MAX_GAS_LIMIT_OPTION)
   }
 
   private _getPrimes (): bytes[][] {

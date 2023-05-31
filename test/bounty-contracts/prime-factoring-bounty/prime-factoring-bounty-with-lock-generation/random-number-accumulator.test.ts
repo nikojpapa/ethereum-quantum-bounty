@@ -79,7 +79,7 @@ describe('RandomNumberAccumulator', () => {
     const secondHalf = _512BitPrime.mask(BYTES_PER_uint256 * BITS_PER_BYTE)
     await randomNumberAccumulator.accumulate(firstHalf, MAX_GAS_LIMIT_OPTION)
     expect(await randomNumberAccumulator.isDone()).to.be.eq(false)
-    await randomNumberAccumulator.accumulate(secondHalf)
+    await randomNumberAccumulator.accumulate(secondHalf, MAX_GAS_LIMIT_OPTION)
     expect(await randomNumberAccumulator.isDone()).to.be.eq(true)
   })
 
@@ -159,7 +159,7 @@ describe('RandomNumberAccumulator', () => {
     })
 
     it('should reset for the next qubit', async () => {
-      await randomNumberAccumulator.accumulate(_256BitPrimes[0])
+      await randomNumberAccumulator.accumulate(_256BitPrimes[0], MAX_GAS_LIMIT_OPTION)
       expect(await randomNumberAccumulator.isDone()).to.be.eq(true)
     })
   })

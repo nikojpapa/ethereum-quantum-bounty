@@ -89,7 +89,7 @@ function getBountyTest (bountyUtils: BountyUtils) {
         })
 
         it('should not send the bounty to the user', async () => {
-          const latestTXGasCosts = await getLastTransactionGasCost(1)
+          const latestTXGasCosts = await getLastTransactionGasCost(2)
           const newBalance = await arbitraryUser.getBalance()
           expect(newBalance).equal(previousBalance.sub(latestTXGasCosts))
         })

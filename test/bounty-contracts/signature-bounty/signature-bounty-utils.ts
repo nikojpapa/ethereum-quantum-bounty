@@ -5,6 +5,8 @@ import { BountyContract, SignatureBounty, SignatureBounty__factory } from '../..
 import { ContractTransaction } from 'ethers'
 import BountyUtils from '../bounty-utils'
 import { arrayify } from 'ethers/lib/utils'
+import { keccak256 } from 'ethereumjs-util'
+import { Buffer } from 'buffer'
 
 class SignatureBountyUtils extends BountyUtils {
   private readonly numberOfLocks: number
@@ -34,14 +36,14 @@ class SignatureBountyUtils extends BountyUtils {
     return this._publicKeys
   }
 
-  public async solveBounty (bounty: SignatureBounty): Promise<Promise<ContractTransaction>> {
+  public async solveBounty (bounty: SignatureBounty): Promise<ContractTransaction> {
     const message = this.arbitraryMessage()
     const signatures = await this.getSignatures(message)
     const signaturesWithMessages = signatures.map(signature => [message, signature])
     return this._attemptBountySolve(bounty, signaturesWithMessages)
   }
 
-  public async solveBountyIncorrectly (bounty: SignatureBounty): Promise<Promise<ContractTransaction>> {
+  public async solveBountyIncorrectly (bounty: SignatureBounty): Promise<ContractTransaction> {
     const message = this.arbitraryMessage()
     const signatures = await this.getSignatures(message)
     const incorrectSignatures = signatures.map(_ => signatures[0])
@@ -49,8 +51,21 @@ class SignatureBountyUtils extends BountyUtils {
     return this._attemptBountySolve(bounty, incorrectSignaturesWithMessages)
   }
 
-  private async _attemptBountySolve (bounty: SignatureBounty, signatures: string[][]): Promise<Promise<ContractTransaction>> {
+  private async _attemptBountySolve (bounty: SignatureBounty, signatures: string[][]): Promise<ContractTransaction> {
     const arbitraryUser = ethers.provider.getSigner(1)
+
+    const solutionEncoding = web3.eth.abi.encodeParameters(
+      [
+        'address',
+        'bytes[][]'
+      ], [
+        await arbitraryUser.getAddress(),
+        signatures
+      ]
+    )
+    const solutionHash = keccak256(Buffer.from(arrayify(solutionEncoding)))
+
+    await bounty.connect(arbitraryUser).commitSolution(solutionHash)
     return bounty.connect(arbitraryUser).widthdraw(signatures)
   }
 
