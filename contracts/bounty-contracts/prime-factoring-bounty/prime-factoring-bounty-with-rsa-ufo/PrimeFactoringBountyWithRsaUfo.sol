@@ -34,7 +34,7 @@ contract PrimeFactoringBountyWithRsaUfo is PrimeFactoringBounty {
   /*
    * From https://www.geeksforgeeks.org/random-number-generator-in-solidity-using-keccak256/
    */
-  function _getRandomNumber(uint256 entropy) private returns (bytes memory) {
+  function _getRandomNumber(uint256 entropy) private view returns (bytes memory) {
     return abi.encodePacked(keccak256(abi.encodePacked(block.timestamp, msg.sender, entropy)));
   }
 }

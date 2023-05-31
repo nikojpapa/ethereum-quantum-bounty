@@ -51,23 +51,20 @@ class PrimeFactoringBountyWithPredeterminedLocksUtils extends BountyUtils {
 
   private async _attemptBountySolve (bounty: BountyContract, primes: bytes[][]): Promise<ContractTransaction> {
     const arbitraryUser = ethers.provider.getSigner(1)
-    const arbitrarySecret = 'arbitrarySecret'
 
     const solutionEncoding = web3.eth.abi.encodeParameters(
       [
         'address',
-        'bytes[][]',
-        'string'
+        'bytes[][]'
       ], [
         await arbitraryUser.getAddress(),
-        primes,
-        arbitrarySecret
+        primes
       ]
     )
     const solutionHash = keccak256(Buffer.from(arrayify(solutionEncoding)))
 
     await bounty.connect(arbitraryUser).commitSolution(solutionHash)
-    return bounty.connect(arbitraryUser).widthdraw(primes, arbitrarySecret)
+    return bounty.connect(arbitraryUser).widthdraw(primes)
   }
 
   private _getPrimes (): bytes[][] {
