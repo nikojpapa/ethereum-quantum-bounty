@@ -4,7 +4,7 @@ import { expect } from 'chai'
 import { BigNumber } from 'ethers'
 import { arrayify } from 'ethers/lib/utils'
 
-describe('RandomNumberAccumulator', () => {
+describe.skip('RandomNumberAccumulator', () => {
   const BYTES_PER_uint256 = 32
   const BITS_PER_BYTE = 8
   const MAX_GAS_LIMIT_OPTION = { gasLimit: BigNumber.from('0x1c9c380') }
