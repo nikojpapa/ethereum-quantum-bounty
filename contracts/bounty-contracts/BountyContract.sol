@@ -10,9 +10,10 @@ abstract contract BountyContract {
 
   struct Commit {
     bytes solutionHash;
-    uint256 block;
+    uint256 timestamp;
   }
   mapping(address => Commit) private commits;
+  uint256 ONE_DAY_IN_SECONDS = 86400;
 
   modifier requireUnsolved() {
     require(!solved, 'Already solved');
@@ -22,13 +23,13 @@ abstract contract BountyContract {
   function commitSolution(bytes memory solutionHash) public requireUnsolved {
     Commit storage commit = commits[msg.sender];
     commit.solutionHash = solutionHash;
-    commit.block = block.number;
+    commit.timestamp = block.timestamp;
   }
 
   function getMyCommit() public view returns (bytes memory, uint256) {
     Commit storage commit = commits[msg.sender];
     _requireCommitExists(commit);
-    return (commit.solutionHash, commit.block);
+    return (commit.solutionHash, commit.timestamp);
   }
 
   function widthdraw(bytes[][] memory solutions) public requireUnsolved {
@@ -41,7 +42,7 @@ abstract contract BountyContract {
   function _verifyReveal(bytes[][] memory solutions) private view returns (bool) {
     Commit storage commit = commits[msg.sender];
     _requireCommitExists(commit);
-    require(commit.block < block.number, 'Cannot reveal in the same block');
+    require(block.timestamp - commit.timestamp >= ONE_DAY_IN_SECONDS, 'Cannot reveal within a day of the commit');
 
     bytes memory solutionEncoding = abi.encode(msg.sender, solutions);
     bytes32 solutionHash = keccak256(solutionEncoding);

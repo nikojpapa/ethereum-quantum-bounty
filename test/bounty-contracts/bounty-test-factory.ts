@@ -1,12 +1,15 @@
-import { BigNumber, ContractTransaction } from 'ethers'
+import { BigNumber } from 'ethers'
 import { JsonRpcSigner } from '@ethersproject/providers/src.ts/json-rpc-provider'
-import { ethers, network } from 'hardhat'
+import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import BountyUtils from './bounty-utils'
 import { BountyContract } from '../../typechain'
 import { arrayify } from 'ethers/lib/utils'
 import { Buffer } from 'buffer'
 import { bytes } from '../solidityTypes'
+import { time } from '@nomicfoundation/hardhat-network-helpers'
+
+const ONE_MINUTE_IN_SECONDS = 60
 
 function getBountyTest (bountyUtils: BountyUtils) {
   return () => {
@@ -135,7 +138,7 @@ function getBountyTest (bountyUtils: BountyUtils) {
 
         const blockNumBefore = await ethers.provider.getBlockNumber()
         const blockBefore = await ethers.provider.getBlock(blockNumBefore)
-        const timestampBefore = blockBefore.number
+        const timestampBefore = blockBefore.timestamp
         expect(timestamp).to.eq(timestampBefore)
       })
 
@@ -164,14 +167,14 @@ function getBountyTest (bountyUtils: BountyUtils) {
         await expect(tx).to.be.revertedWith('Not committed yet')
       })
 
-      it('should not allow a reveal in the same block as the commit', async () => {
-        await network.provider.send('evm_setAutomine', [false])
-        await network.provider.send('evm_setIntervalMining', [0])
-
+      it('should not allow a reveal within a day of the commit', async () => {
         const arbitrarySolutions: bytes[][] = []
         await bounty.commitSolution(arbitrarySolutionHashBuffer)
+
+        const justBeforeADay = bountyUtils.ONE_DAY_IN_SECONDS - ONE_MINUTE_IN_SECONDS
+        await time.increase(justBeforeADay)
         const txReveal = bounty.widthdraw(arbitrarySolutions)
-        await expect(txReveal).to.be.revertedWith('Cannot reveal in the same block')
+        await expect(txReveal).to.be.revertedWith('Cannot reveal within a day of the commit')
       })
     })
   }

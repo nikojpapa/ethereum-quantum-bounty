@@ -9,9 +9,6 @@ import {
 } from '../../../../typechain'
 import { arrayify } from 'ethers/lib/utils'
 import { Buffer } from 'buffer'
-import { keccak256 } from 'ethereumjs-util'
-
-const MAX_GAS_LIMIT_OPTION = { gasLimit: BigNumber.from('0x1c9c380') }
 
 class PrimeFactoringBountyWithPredeterminedLocksUtils extends BountyUtils {
   private readonly locksAndKeys = [
@@ -42,31 +39,13 @@ class PrimeFactoringBountyWithPredeterminedLocksUtils extends BountyUtils {
 
   public async solveBounty (bounty: BountyContract): Promise<ContractTransaction> {
     const primes = this._getPrimes()
-    return this._attemptBountySolve(bounty, primes)
+    return this.submitSolution(primes, bounty)
   }
 
   public async solveBountyIncorrectly (bounty: BountyContract): Promise<ContractTransaction> {
     const primes = this._getPrimes()
     const incorrectPrimes = primes.map(_ => primes[0])
-    return this._attemptBountySolve(bounty, incorrectPrimes)
-  }
-
-  private async _attemptBountySolve (bounty: BountyContract, primes: bytes[][]): Promise<ContractTransaction> {
-    const arbitraryUser = ethers.provider.getSigner(1)
-
-    const solutionEncoding = web3.eth.abi.encodeParameters(
-      [
-        'address',
-        'bytes[][]'
-      ], [
-        await arbitraryUser.getAddress(),
-        primes
-      ]
-    )
-    const solutionHash = keccak256(Buffer.from(arrayify(solutionEncoding)))
-
-    await bounty.connect(arbitraryUser).commitSolution(solutionHash, MAX_GAS_LIMIT_OPTION)
-    return bounty.connect(arbitraryUser).widthdraw(primes, MAX_GAS_LIMIT_OPTION)
+    return this.submitSolution(incorrectPrimes, bounty)
   }
 
   private _getPrimes (): bytes[][] {

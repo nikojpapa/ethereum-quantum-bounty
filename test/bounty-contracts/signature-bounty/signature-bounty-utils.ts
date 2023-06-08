@@ -5,7 +5,6 @@ import { BountyContract, SignatureBounty, SignatureBounty__factory } from '../..
 import { BigNumber, ContractTransaction } from 'ethers'
 import BountyUtils from '../bounty-utils'
 import { arrayify } from 'ethers/lib/utils'
-import { keccak256 } from 'ethereumjs-util'
 import { Buffer } from 'buffer'
 
 class SignatureBountyUtils extends BountyUtils {
@@ -40,7 +39,7 @@ class SignatureBountyUtils extends BountyUtils {
     const message = this.arbitraryMessage()
     const signatures = await this.getSignatures(message)
     const signaturesWithMessages = signatures.map(signature => [message, signature])
-    return this._attemptBountySolve(bounty, signaturesWithMessages)
+    return this.submitSolution(signaturesWithMessages, bounty)
   }
 
   public async solveBountyIncorrectly (bounty: SignatureBounty): Promise<ContractTransaction> {
@@ -48,25 +47,7 @@ class SignatureBountyUtils extends BountyUtils {
     const signatures = await this.getSignatures(message)
     const incorrectSignatures = signatures.map(_ => signatures[0])
     const incorrectSignaturesWithMessages = incorrectSignatures.map(signature => [message, signatures[0]])
-    return this._attemptBountySolve(bounty, incorrectSignaturesWithMessages)
-  }
-
-  private async _attemptBountySolve (bounty: SignatureBounty, signatures: string[][]): Promise<ContractTransaction> {
-    const arbitraryUser = ethers.provider.getSigner(1)
-
-    const solutionEncoding = web3.eth.abi.encodeParameters(
-      [
-        'address',
-        'bytes[][]'
-      ], [
-        await arbitraryUser.getAddress(),
-        signatures
-      ]
-    )
-    const solutionHash = keccak256(Buffer.from(arrayify(solutionEncoding)))
-
-    await bounty.connect(arbitraryUser).commitSolution(solutionHash)
-    return bounty.connect(arbitraryUser).widthdraw(signatures)
+    return this.submitSolution(incorrectSignaturesWithMessages, bounty)
   }
 
   private async getSignatures (message: string): Promise<string[]> {

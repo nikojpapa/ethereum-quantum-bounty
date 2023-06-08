@@ -1,9 +1,17 @@
 import { BigNumber, ContractTransaction } from 'ethers'
 import { BountyContract } from '../../typechain'
 import { bytes } from '../solidityTypes'
-import { ethers } from 'hardhat'
+import { ethers, web3 } from 'hardhat'
+import { time } from '@nomicfoundation/hardhat-network-helpers'
+import { keccak256 } from 'ethereumjs-util'
+import { Buffer } from 'buffer'
+import { arrayify } from 'ethers/lib/utils'
+
+const MAX_GAS_LIMIT_OPTION = { gasLimit: BigNumber.from('0x1c9c380') }
 
 abstract class BountyUtils {
+  public ONE_DAY_IN_SECONDS = 86400
+
   public async deployBounty (): Promise<BountyContract> {
     throw new Error('deploySignatureBounty() not implemented')
   }
@@ -26,6 +34,24 @@ abstract class BountyUtils {
 
   public async getLatestSolvedIncorrectlyGasCost (): Promise<BigNumber> {
     throw new Error('getLatestSolvedIncorrectlyGasCost() not implemented')
+  }
+
+  public async submitSolution (solution: bytes[][], bounty: BountyContract): Promise<ContractTransaction> {
+    const arbitraryUser = ethers.provider.getSigner(1)
+    const solutionEncoding = web3.eth.abi.encodeParameters(
+      [
+        'address',
+        'bytes[][]'
+      ], [
+        await arbitraryUser.getAddress(),
+        solution
+      ]
+    )
+    const solutionHash = keccak256(Buffer.from(arrayify(solutionEncoding)))
+
+    await bounty.connect(arbitraryUser).commitSolution(solutionHash, MAX_GAS_LIMIT_OPTION)
+    await time.increase(this.ONE_DAY_IN_SECONDS)
+    return bounty.connect(arbitraryUser).widthdraw(solution, MAX_GAS_LIMIT_OPTION)
   }
 
   async getLastTransactionGasCost (numberOfTransactions: number): Promise<BigNumber> {
