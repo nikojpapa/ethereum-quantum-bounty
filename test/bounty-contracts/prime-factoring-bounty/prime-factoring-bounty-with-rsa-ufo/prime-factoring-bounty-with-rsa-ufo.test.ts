@@ -15,6 +15,14 @@ describe('PrimeFactoringBountyWithRsaUfo', () => {
     return bounty
   }
 
+  it('should revert lock generation if already done', async () => {
+    const numberOfLocks = 1
+    const bytesPerPrime = 1
+    const bounty = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
+    const tx = bounty.triggerLockAccumulation()
+    await expect(tx).to.be.revertedWith('Locks have already been generated')
+  })
+
   it('should generate different locks on each deploy', async () => {
     const numberOfLocks = 1
     const bytesPerPrime = 1

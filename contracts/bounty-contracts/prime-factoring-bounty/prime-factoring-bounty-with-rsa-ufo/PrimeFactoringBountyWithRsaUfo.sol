@@ -26,6 +26,8 @@ contract PrimeFactoringBountyWithRsaUfo is PrimeFactoringBounty {
   }
 
   function triggerLockAccumulation() public {
+    require(!rsaUfoAccumulator.isDone(), 'Locks have already been generated');
+
     rsaUfoAccumulator.accumulate(_getRandomNumber(iteration++));
     if (rsaUfoAccumulator.isDone()) {
       for (uint256 lockNumber; lockNumber < locks.length; lockNumber++) {
