@@ -8,7 +8,11 @@ describe('PrimeFactoringBountyWithRsaUfo', () => {
   const ethersSigner = ethers.provider.getSigner()
 
   async function deployNewRsaUfoAccumulator (numberOfLocks: number, bytesPerPrime: number): Promise<PrimeFactoringBountyWithRsaUfo> {
-    return await new PrimeFactoringBountyWithRsaUfo__factory(ethersSigner).deploy(numberOfLocks, bytesPerPrime)
+    const bounty = await new PrimeFactoringBountyWithRsaUfo__factory(ethersSigner).deploy(numberOfLocks, bytesPerPrime)
+    while ((await bounty.locks(0)) === '0x') {
+      await bounty.triggerLockAccumulation()
+    }
+    return bounty
   }
 
   it('should generate different locks on each deploy', async () => {

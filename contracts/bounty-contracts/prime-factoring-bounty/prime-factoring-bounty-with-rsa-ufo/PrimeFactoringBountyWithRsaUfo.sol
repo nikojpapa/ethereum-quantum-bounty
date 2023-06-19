@@ -18,16 +18,19 @@ import "./RsaUfoAccumulator.sol";
  */
 contract PrimeFactoringBountyWithRsaUfo is PrimeFactoringBounty {
   RsaUfoAccumulator private rsaUfoAccumulator;
+  uint256 iteration;
 
   constructor(uint256 numberOfLocks, uint256 primeByteLengthInit) {
     locks = new bytes[](numberOfLocks);
     rsaUfoAccumulator = new RsaUfoAccumulator(numberOfLocks, primeByteLengthInit);
+  }
 
-    uint256 iteration;
-    while (!rsaUfoAccumulator.isDone()) rsaUfoAccumulator.accumulate(_getRandomNumber(iteration++));
-
-    for (uint256 lockNumber; lockNumber < numberOfLocks; lockNumber++) {
-      locks[lockNumber] = rsaUfoAccumulator.locks(lockNumber);
+  function triggerLockAccumulation() public {
+    rsaUfoAccumulator.accumulate(_getRandomNumber(iteration++));
+    if (rsaUfoAccumulator.isDone()) {
+      for (uint256 lockNumber; lockNumber < locks.length; lockNumber++) {
+        locks[lockNumber] = rsaUfoAccumulator.locks(lockNumber);
+      }
     }
   }
 
