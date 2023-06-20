@@ -11,26 +11,21 @@ import "./miller-rabin/MillerRabin.sol";
 abstract contract PrimeFactoringBounty is BountyContract {
   using BigNumbers for *;
 
-  function _verifySolutions(bytes[][] memory solutions) internal view override _locksHaveBeenSet returns (bool) {
-    for (uint256 lockNumber = 0; lockNumber < locks.length; lockNumber++) {
-      bytes[] memory lockSolutions = solutions[lockNumber];
-
-      BigNumber memory product = BigNumbers.one();
-      for (uint256 i = 0; i < lockSolutions.length; i++) {
-        bytes memory primeFactor = lockSolutions[i];
-        require(MillerRabin.isPrime(primeFactor), 'Given solution is not prime');
-        product = product.mul(primeFactor.init(false));
-      }
-
-      BigNumber memory lock = locks[lockNumber].init(false);
-      if (!product.eq(lock)) return false;
+  function _verifySolutions(uint256 lockNumber, bytes[] memory solution) internal view override _locksHaveBeenSet returns (bool) {
+    BigNumber memory product = BigNumbers.one();
+    for (uint256 i = 0; i < solution.length; i++) {
+      bytes memory primeFactor = solution[i];
+      require(MillerRabin.isPrime(primeFactor), 'Given solution is not prime');
+      product = product.mul(primeFactor.init(false));
     }
-    return true;
+
+    BigNumber memory lock = locks[lockNumber].init(false);
+    return product.eq(lock);
   }
 
   modifier _locksHaveBeenSet() {
     require(locks.length != 0, 'Locks array has not been initialized');
-    require(locks[locks.length - 1].length != 0, 'Locks values have not been set');
+    require(locks[locks.length - 1].length != 0, 'Lock values have not been set');
     _;
   }
 }

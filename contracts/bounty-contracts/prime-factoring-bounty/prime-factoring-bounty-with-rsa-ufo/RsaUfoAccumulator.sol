@@ -20,7 +20,7 @@ contract RsaUfoAccumulator is PrimeFactoringBounty {
     numberOfLocks = numberOfLocksInit;
     bytesPerPrime = bytesPerPrimeInit;
 
-    locks = new bytes[](numberOfLocks);
+    initLocks(numberOfLocks);
     currentLock = "";
     bytesPerLock = 3 * bytesPerPrime;
   }

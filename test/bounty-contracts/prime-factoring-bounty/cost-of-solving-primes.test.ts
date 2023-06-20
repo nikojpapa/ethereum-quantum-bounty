@@ -17,7 +17,11 @@ describe('Test the cost of solving the prime factoring bounty', () => {
 
     async function deployBounty (locks: bytes[]): Promise<PrimeFactoringBountyWithPredeterminedLocks> {
       const ethersSigner = ethers.provider.getSigner()
-      return await new PrimeFactoringBountyWithPredeterminedLocks__factory(ethersSigner).deploy(locks)
+      const bounty = await new PrimeFactoringBountyWithPredeterminedLocks__factory(ethersSigner).deploy(locks.length)
+      for (let i = 0; i < locks.length; i++) {
+        await bounty.setLock(i, locks[i])
+      }
+      return bounty
     }
 
     const primesOf100 = [
@@ -51,8 +55,14 @@ describe('Test the cost of solving the prime factoring bounty', () => {
 
     const bountyUtils = new PrimeFactoringBountyWithPredeterminedLocksUtils()
     const bounty = await deployBounty(locks)
-    const tx = await bountyUtils.submitSolution(solutions, bounty)
-    const receipt = await tx.wait()
-    expect(receipt.gasUsed).to.eq(5)
+
+    let gasUsed = BigNumber.from(0)
+    for (let i = 0; i < solutions.length; i++) {
+      const solution = solutions[i]
+      const tx = await bountyUtils.submitSolution(i, solution, bounty)
+      const receipt = await tx.wait()
+      gasUsed = gasUsed.add(receipt.gasUsed)
+    }
+    expect(gasUsed).to.eq(5)
   })
 })

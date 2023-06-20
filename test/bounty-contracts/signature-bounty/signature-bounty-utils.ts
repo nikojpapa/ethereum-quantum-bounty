@@ -3,7 +3,7 @@ import { bytes } from '../../solidityTypes'
 import { ethers, web3 } from 'hardhat'
 import { BountyContract, SignatureBounty, SignatureBounty__factory } from '../../../typechain'
 import { BigNumber, ContractTransaction } from 'ethers'
-import BountyUtils from '../bounty-utils'
+import BountyUtils, { SolveAttemptResult } from '../bounty-utils'
 import { arrayify } from 'ethers/lib/utils'
 import { Buffer } from 'buffer'
 
@@ -35,19 +35,30 @@ class SignatureBountyUtils extends BountyUtils {
     return this._publicKeys
   }
 
-  public async solveBounty (bounty: SignatureBounty): Promise<ContractTransaction> {
-    const message = this.arbitraryMessage()
-    const signatures = await this.getSignatures(message)
-    const signaturesWithMessages = signatures.map(signature => [message, signature])
-    return this.submitSolution(signaturesWithMessages, bounty)
+  public async solveBounty (bounty: SignatureBounty, getUserBalance: () => Promise<BigNumber>): Promise<SolveAttemptResult> {
+    let userBalanceBeforeFinalTransaction = BigNumber.from(0)
+    const signaturesWithMessages = await this.getSignaturesWithMessages(bounty)
+    for (let i = 0; i < signaturesWithMessages.length; i++) {
+      if (getUserBalance != null && i === signaturesWithMessages.length - 1) userBalanceBeforeFinalTransaction = await getUserBalance()
+      await this.submitSolution(i, signaturesWithMessages[i], bounty)
+    }
+    return new SolveAttemptResult(userBalanceBeforeFinalTransaction)
+  }
+
+  public async solveBountyPartially (bounty: SignatureBounty): Promise<void> {
+    const signaturesWithMessages = await this.getSignaturesWithMessages(bounty)
+    await this.submitSolution(0, signaturesWithMessages[0], bounty)
   }
 
   public async solveBountyIncorrectly (bounty: SignatureBounty): Promise<ContractTransaction> {
+    const signaturesWithMessages = await this.getSignaturesWithMessages(bounty)
+    return this.submitSolution(1, signaturesWithMessages[0], bounty)
+  }
+
+  private async getSignaturesWithMessages (bounty: SignatureBounty): Promise<string[][]> {
     const message = this.arbitraryMessage()
     const signatures = await this.getSignatures(message)
-    const incorrectSignatures = signatures.map(_ => signatures[0])
-    const incorrectSignaturesWithMessages = incorrectSignatures.map(signature => [message, signatures[0]])
-    return this.submitSolution(incorrectSignaturesWithMessages, bounty)
+    return signatures.map(signature => [message, signature])
   }
 
   private async getSignatures (message: string): Promise<string[]> {
