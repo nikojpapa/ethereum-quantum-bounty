@@ -1,4 +1,4 @@
-import { RsaUfoAccumulator, RsaUfoAccumulator__factory } from '../../../../typechain'
+import { RsaUfoAccumulatorTestHelper, RsaUfoAccumulatorTestHelper__factory } from '../../../../typechain'
 import { ethers } from 'hardhat'
 import { randomBytes } from 'ethers/lib/utils'
 import { expect } from 'chai'
@@ -22,14 +22,14 @@ describe('RsaUfoAccumulator', () => {
   const ethersSigner = ethers.provider.getSigner()
   const randomness = new Array(2).fill(0).map(() => new RandomBytes())
 
-  let rsaUfoAccumulator: RsaUfoAccumulator
+  let rsaUfoAccumulator: RsaUfoAccumulatorTestHelper
 
-  async function deployNewRsaUfoAccumulator (numberOfLocks: number, bytesPerPrime: number): Promise<RsaUfoAccumulator> {
-    return await new RsaUfoAccumulator__factory(ethersSigner).deploy(numberOfLocks, bytesPerPrime)
+  async function deployNewRsaUfoAccumulator (numberOfLocks: number, bytesPerPrime: number): Promise<RsaUfoAccumulatorTestHelper> {
+    return await new RsaUfoAccumulatorTestHelper__factory(ethersSigner).deploy(numberOfLocks, bytesPerPrime)
   }
 
   async function expectDone (expectedValue: boolean): Promise<void> {
-    expect(await rsaUfoAccumulator.isDone()).to.be.eq(expectedValue)
+    expect(await rsaUfoAccumulator.generationIsDone()).to.be.eq(expectedValue)
   }
 
   async function expectLock (lockNumber: number, expectedValue: string): Promise<void> {
@@ -42,7 +42,7 @@ describe('RsaUfoAccumulator', () => {
       const bytesPerPrime = 1
       rsaUfoAccumulator = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
 
-      await rsaUfoAccumulator.accumulate(randomness[0].buffer)
+      await rsaUfoAccumulator.triggerAccumulate(randomness[0].buffer)
     })
 
     it('should be marked as done', async () => {
@@ -60,7 +60,7 @@ describe('RsaUfoAccumulator', () => {
       const bytesPerPrime = 1
       rsaUfoAccumulator = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
 
-      await rsaUfoAccumulator.accumulate(Buffer.concat([randomness[0].buffer, randomness[1].buffer]))
+      await rsaUfoAccumulator.triggerAccumulate(Buffer.concat([randomness[0].buffer, randomness[1].buffer]))
     })
 
     it('should be marked as done', async () => {
@@ -78,7 +78,7 @@ describe('RsaUfoAccumulator', () => {
       const bytesPerPrime = 2
       rsaUfoAccumulator = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
 
-      await rsaUfoAccumulator.accumulate(randomness[0].buffer)
+      await rsaUfoAccumulator.triggerAccumulate(randomness[0].buffer)
     })
 
     describe('first accumulation', () => {
@@ -93,7 +93,7 @@ describe('RsaUfoAccumulator', () => {
 
     describe('second accumulation', () => {
       beforeEach(async () => {
-        await rsaUfoAccumulator.accumulate(randomness[1].buffer)
+        await rsaUfoAccumulator.triggerAccumulate(randomness[1].buffer)
       })
 
       it('should be marked as done', async () => {
@@ -112,7 +112,7 @@ describe('RsaUfoAccumulator', () => {
       const bytesPerPrime = 1
       rsaUfoAccumulator = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
 
-      await rsaUfoAccumulator.accumulate(randomness[0].buffer)
+      await rsaUfoAccumulator.triggerAccumulate(randomness[0].buffer)
     })
 
     describe('first accumulation', () => {
@@ -131,7 +131,7 @@ describe('RsaUfoAccumulator', () => {
 
     describe('second accumulation', () => {
       beforeEach(async () => {
-        await rsaUfoAccumulator.accumulate(randomness[1].buffer)
+        await rsaUfoAccumulator.triggerAccumulate(randomness[1].buffer)
       })
 
       it('should be marked as done', async () => {
@@ -154,7 +154,7 @@ describe('RsaUfoAccumulator', () => {
       const bytesPerPrime = 1
       rsaUfoAccumulator = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
 
-      await rsaUfoAccumulator.accumulate(randomness[0].buffer)
+      await rsaUfoAccumulator.triggerAccumulate(randomness[0].buffer)
     })
 
     describe('first accumulation', () => {

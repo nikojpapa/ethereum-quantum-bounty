@@ -12,7 +12,7 @@ const deployPrimeFactoringBounty: DeployFunction = async function (hre: HardhatR
   await new Create2Factory(ethers.provider).deployFactory()
 
   const numberOfLocks = 120
-  const primeByteLength = 1024
+  const primeByteLength = 128
   let gasUsed = BigNumber.from(0)
 
   const deployResult = await hre.deployments.deploy(
@@ -27,7 +27,7 @@ const deployPrimeFactoringBounty: DeployFunction = async function (hre: HardhatR
   gasUsed = gasUsed.add(deployResult.receipt?.gasUsed)
 
   const bounty = await ethers.getContractAt('PrimeFactoringBountyWithRsaUfo', deployResult.address)
-  while ((await bounty.locks(0)) === '0x') {
+  while (!(await bounty.generationIsDone())) {
     const tx = await bounty.triggerLockAccumulation()
     const receipt = await tx.wait()
     gasUsed = gasUsed.add(receipt.gasUsed)
