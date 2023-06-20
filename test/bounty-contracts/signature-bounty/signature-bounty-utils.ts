@@ -3,7 +3,12 @@ import { bytes } from '../../solidityTypes'
 import { ethers, web3 } from 'hardhat'
 import { BountyContract, SignatureBounty, SignatureBounty__factory } from '../../../typechain'
 import { BigNumber, ContractTransaction } from 'ethers'
-import BountyUtils, { SolveAttemptResult } from '../bounty-utils'
+import BountyUtils, {
+  getLatestSolvedGasCost,
+  SolveAttemptResult,
+  solveBountyReturningUserBalanceBeforeFinalSolution,
+  submitSolution
+} from '../bounty-utils'
 import { arrayify } from 'ethers/lib/utils'
 import { Buffer } from 'buffer'
 
@@ -36,23 +41,17 @@ class SignatureBountyUtils extends BountyUtils {
   }
 
   public async solveBounty (bounty: SignatureBounty, getUserBalance: () => Promise<BigNumber>): Promise<SolveAttemptResult> {
-    let userBalanceBeforeFinalTransaction = BigNumber.from(0)
-    const signaturesWithMessages = await this.getSignaturesWithMessages(bounty)
-    for (let i = 0; i < signaturesWithMessages.length; i++) {
-      if (getUserBalance != null && i === signaturesWithMessages.length - 1) userBalanceBeforeFinalTransaction = await getUserBalance()
-      await this.submitSolution(i, signaturesWithMessages[i], bounty)
-    }
-    return new SolveAttemptResult(userBalanceBeforeFinalTransaction)
+    return solveBountyReturningUserBalanceBeforeFinalSolution(await this.getSignaturesWithMessages(bounty), bounty, getUserBalance)
   }
 
   public async solveBountyPartially (bounty: SignatureBounty): Promise<void> {
     const signaturesWithMessages = await this.getSignaturesWithMessages(bounty)
-    await this.submitSolution(0, signaturesWithMessages[0], bounty)
+    await submitSolution(0, signaturesWithMessages[0], bounty)
   }
 
   public async solveBountyIncorrectly (bounty: SignatureBounty): Promise<ContractTransaction> {
     const signaturesWithMessages = await this.getSignaturesWithMessages(bounty)
-    return this.submitSolution(1, signaturesWithMessages[0], bounty)
+    return submitSolution(1, signaturesWithMessages[0], bounty)
   }
 
   private async getSignaturesWithMessages (bounty: SignatureBounty): Promise<string[][]> {
@@ -83,11 +82,7 @@ class SignatureBountyUtils extends BountyUtils {
   }
 
   public async getLatestSolvedGasCost (): Promise<BigNumber> {
-    return await this.getLastTransactionGasCost(2)
-  }
-
-  public async getLatestSolvedIncorrectlyGasCost (): Promise<BigNumber> {
-    return await this.getLastTransactionGasCost(1)
+    return getLatestSolvedGasCost(this._signatures.length)
   }
 }
 

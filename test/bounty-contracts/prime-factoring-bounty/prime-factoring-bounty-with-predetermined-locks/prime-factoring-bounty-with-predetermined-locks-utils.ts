@@ -1,7 +1,12 @@
 import { bytes } from '../../../solidityTypes'
 import { ethers } from 'hardhat'
 import { BigNumber, ContractTransaction } from 'ethers'
-import BountyUtils, { SolveAttemptResult } from '../../bounty-utils'
+import BountyUtils, {
+  getLatestSolvedGasCost,
+  SolveAttemptResult,
+  solveBountyReturningUserBalanceBeforeFinalSolution,
+  submitSolution
+} from '../../bounty-utils'
 import {
   BountyContract,
   PrimeFactoringBountyWithPredeterminedLocks,
@@ -43,23 +48,17 @@ class PrimeFactoringBountyWithPredeterminedLocksUtils extends BountyUtils {
   }
 
   public async solveBounty (bounty: BountyContract, getUserBalance?: () => Promise<BigNumber>): Promise<SolveAttemptResult> {
-    let userBalanceBeforeFinalTransaction = BigNumber.from(0)
-    const primes = this._getPrimes()
-    for (let i = 0; i < primes.length; i++) {
-      if (getUserBalance != null && i === primes.length - 1) userBalanceBeforeFinalTransaction = await getUserBalance()
-      await this.submitSolution(i, primes[i], bounty)
-    }
-    return new SolveAttemptResult(userBalanceBeforeFinalTransaction)
+    return solveBountyReturningUserBalanceBeforeFinalSolution(this._getPrimes(), bounty, getUserBalance)
   }
 
   public async solveBountyPartially (bounty: BountyContract): Promise<void> {
     const primes = this._getPrimes()
-    await this.submitSolution(0, primes[0], bounty)
+    await submitSolution(0, primes[0], bounty)
   }
 
   public async solveBountyIncorrectly (bounty: BountyContract): Promise<ContractTransaction> {
     const primes = this._getPrimes()
-    return await this.submitSolution(1, primes[0], bounty)
+    return await submitSolution(1, primes[0], bounty)
   }
 
   private _getPrimes (): bytes[][] {
@@ -69,14 +68,8 @@ class PrimeFactoringBountyWithPredeterminedLocksUtils extends BountyUtils {
         Buffer.from(arrayify(prime))))
   }
 
-  public async getLatestSolvedIncorrectlyGasCost (): Promise<BigNumber> {
-    return this.getLatestSolvedGasCost()
-  }
-
   public async getLatestSolvedGasCost (): Promise<BigNumber> {
-    const numberOfTransactionsPerSubmittedSolution = 2
-    const numberOfSolutions = this.locksAndKeys.length
-    return await this.getLastTransactionGasCost(numberOfTransactionsPerSubmittedSolution * numberOfSolutions)
+    return getLatestSolvedGasCost(this.locksAndKeys.length)
   }
 }
 

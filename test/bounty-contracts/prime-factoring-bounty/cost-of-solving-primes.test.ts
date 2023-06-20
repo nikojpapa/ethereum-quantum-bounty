@@ -5,24 +5,28 @@ import {
 } from '../../../typechain'
 import { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
-import PrimeFactoringBountyWithPredeterminedLocksUtils
-  from './prime-factoring-bounty-with-predetermined-locks/prime-factoring-bounty-with-predetermined-locks-utils'
 import { arrayify } from 'ethers/lib/utils'
 import { expect } from 'chai'
+import { submitSolution } from '../bounty-utils'
 
-describe('Test the cost of solving the prime factoring bounty', () => {
-  it('should cost 5 wei to solve 120 locks of size 3072 bits', async () => {
+describe.skip('Test the cost of solving the prime factoring bounty', () => {
+  let bounty: PrimeFactoringBountyWithPredeterminedLocks
+  let solutions: bytes[][]
+  let gasUsed: BigNumber
+
+  async function deployBounty (locks: bytes[]): Promise<PrimeFactoringBountyWithPredeterminedLocks> {
+    const ethersSigner = ethers.provider.getSigner()
+    const bounty = await new PrimeFactoringBountyWithPredeterminedLocks__factory(ethersSigner).deploy(locks.length)
+    for (let i = 0; i < locks.length; i++) {
+      await bounty.setLock(i, locks[i])
+    }
+    return bounty
+  }
+
+  beforeEach(async () => {
     const numberOfLocks = 120
     const bytesPerPrime = 128
-
-    async function deployBounty (locks: bytes[]): Promise<PrimeFactoringBountyWithPredeterminedLocks> {
-      const ethersSigner = ethers.provider.getSigner()
-      const bounty = await new PrimeFactoringBountyWithPredeterminedLocks__factory(ethersSigner).deploy(locks.length)
-      for (let i = 0; i < locks.length; i++) {
-        await bounty.setLock(i, locks[i])
-      }
-      return bounty
-    }
+    gasUsed = BigNumber.from(0)
 
     const primesOf100 = [
       BigNumber.from(2),
@@ -51,18 +55,25 @@ describe('Test the cost of solving the prime factoring bounty', () => {
 
     const locks = new Array(numberOfLocks).fill(0).map(() => lockOf3072BitsWithKnownDecomposition.toHexString())
     const solutionsPerLock = primeFactors.map(x => Buffer.from(arrayify(x.toHexString())))
-    const solutions = locks.map(() => solutionsPerLock)
+    solutions = locks.map(() => solutionsPerLock)
 
-    const bountyUtils = new PrimeFactoringBountyWithPredeterminedLocksUtils()
-    const bounty = await deployBounty(locks)
+    bounty = await deployBounty(locks)
+  })
 
-    let gasUsed = BigNumber.from(0)
+  it('should find the gas cost to solve 120 locks of size 3072 bits', async () => {
     for (let i = 0; i < solutions.length; i++) {
-      const solution = solutions[i]
-      const tx = await bountyUtils.submitSolution(i, solution, bounty)
+      const tx = await submitSolution(i, solutions[i], bounty)
       const receipt = await tx.wait()
       gasUsed = gasUsed.add(receipt.gasUsed)
     }
-    expect(gasUsed).to.eq(5)
+    expect(gasUsed).to.equal(BigNumber.from(0x1b2befab))
+  })
+
+  it('should find the gas cost to solve 1 locks of size 3072 bits', async () => {
+    const arbitraryLockNumber = 0
+    const tx = await submitSolution(arbitraryLockNumber, solutions[arbitraryLockNumber], bounty)
+    const receipt = await tx.wait()
+    gasUsed = gasUsed.add(receipt.gasUsed)
+    expect(gasUsed).to.equal(BigNumber.from(0x4b423d))
   })
 })

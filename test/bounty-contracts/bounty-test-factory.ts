@@ -2,7 +2,7 @@ import { BigNumber } from 'ethers'
 import { JsonRpcSigner } from '@ethersproject/providers/src.ts/json-rpc-provider'
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import BountyUtils from './bounty-utils'
+import BountyUtils, { submitSolution } from './bounty-utils'
 import { BountyContract } from '../../typechain'
 import { arrayify } from 'ethers/lib/utils'
 import { Buffer } from 'buffer'
@@ -24,6 +24,10 @@ function getBountyTest (bountyUtils: BountyUtils) {
       let arbitraryUser: JsonRpcSigner
       let previousBalance: BigNumber
 
+      async function getBalance (): Promise<BigNumber> {
+        return await arbitraryUser.getBalance()
+      }
+
       before(async () => {
         arbitraryUser = ethers.provider.getSigner(1)
       })
@@ -33,9 +37,8 @@ function getBountyTest (bountyUtils: BountyUtils) {
       })
 
       describe('Correct Signatures', () => {
-        let previousBalance: BigNumber
         beforeEach(async () => {
-          const result = await bountyUtils.solveBounty(bounty, async () => await arbitraryUser.getBalance())
+          const result = await bountyUtils.solveBounty(bounty, getBalance)
           previousBalance = result.userBalanceBeforeFinalTransaction
         })
 
@@ -60,13 +63,14 @@ function getBountyTest (bountyUtils: BountyUtils) {
         })
 
         it('should not allow further solve attempts if already solved', async () => {
-          const tx = bountyUtils.submitSolution(0, [Buffer.from('')], bounty)
+          const tx = submitSolution(0, [Buffer.from('')], bounty)
           await expect(tx).to.be.revertedWith('Already solved')
         })
       })
 
       describe('Incorrect Signatures', () => {
         beforeEach(async () => {
+          previousBalance = await getBalance()
           const tx = bountyUtils.solveBountyIncorrectly(bounty)
           await expect(tx).to.be.revertedWith('Invalid solution')
         })
@@ -76,7 +80,7 @@ function getBountyTest (bountyUtils: BountyUtils) {
         })
 
         it('should not send the bounty to the user', async () => {
-          const latestTXGasCosts = await bountyUtils.getLatestSolvedIncorrectlyGasCost()
+          const latestTXGasCosts = await bountyUtils.getLatestSolvedGasCost()
           const newBalance = await arbitraryUser.getBalance()
           expect(newBalance).equal(previousBalance.sub(latestTXGasCosts))
         })
