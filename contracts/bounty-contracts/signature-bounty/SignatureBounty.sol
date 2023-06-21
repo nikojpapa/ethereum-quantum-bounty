@@ -16,7 +16,7 @@ contract SignatureBounty is BountyContract {
         }
     }
 
-    function _verifySolutions(uint256 lockNumber, bytes[] memory solution) internal view override returns (bool) {
+    function _verifySolution(uint256 lockNumber, bytes[] memory solution) internal view override returns (bool) {
         address lock = BytesLib.toAddress(locks[lockNumber], 0);
         bytes32 message = BytesLib.toBytes32(solution[0], 0);
         bytes memory signature = solution[1];

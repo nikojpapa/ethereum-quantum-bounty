@@ -40,7 +40,7 @@ abstract contract BountyContract {
 
   function solve(uint256 lockNumber, bytes[] memory solution) public requireUnsolved {
     require(_verifyReveal(lockNumber, solution), "Solution hash doesn't match");
-    require(_verifySolutions(lockNumber, solution), 'Invalid solution');
+    require(_verifySolution(lockNumber, solution), 'Invalid solution');
     lockSolvedStatus[lockNumber] = true;
     if (_allLocksSolved()) {
       solved = true;
@@ -62,7 +62,7 @@ abstract contract BountyContract {
     require(!BytesLib.equal(commit.solutionHash, ""), 'Not committed yet');
   }
 
-  function _verifySolutions(uint256 lockNumber, bytes[] memory solution) internal view virtual returns (bool);
+  function _verifySolution(uint256 lockNumber, bytes[] memory solution) internal view virtual returns (bool);
 
   function _allLocksSolved() private view returns (bool) {
     bool allSolved = true;
