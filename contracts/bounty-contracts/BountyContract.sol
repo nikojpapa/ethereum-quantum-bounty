@@ -6,13 +6,14 @@ import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 abstract contract BountyContract {
   bytes[] public locks;
+  bool[] public lockSolvedStatus;
   bool public solved;
 
   struct Commit {
     bytes solutionHash;
     uint256 timestamp;
   }
-  mapping(address => Commit) private commits;
+  mapping(address => mapping(uint256 => Commit)) private commits;
   uint256 ONE_DAY_IN_SECONDS = 86400;
 
   modifier requireUnsolved() {
@@ -20,31 +21,39 @@ abstract contract BountyContract {
     _;
   }
 
-  function commitSolution(bytes memory solutionHash) public requireUnsolved {
-    Commit storage commit = commits[msg.sender];
+  function initLocks(uint256 numberOfLocks) internal {
+    locks = new bytes[](numberOfLocks);
+    lockSolvedStatus = new bool[](numberOfLocks);
+  }
+
+  function commitSolution(uint256 lockNumber, bytes memory solutionHash) public requireUnsolved {
+    Commit storage commit = commits[msg.sender][lockNumber];
     commit.solutionHash = solutionHash;
     commit.timestamp = block.timestamp;
   }
 
-  function getMyCommit() public view returns (bytes memory, uint256) {
-    Commit storage commit = commits[msg.sender];
+  function getMyCommit(uint256 lockNumber) public view returns (bytes memory, uint256) {
+    Commit storage commit = commits[msg.sender][lockNumber];
     _requireCommitExists(commit);
     return (commit.solutionHash, commit.timestamp);
   }
 
-  function widthdraw(bytes[][] memory solutions) public requireUnsolved {
-    require(_verifyReveal(solutions), "Solution hash doesn't match");
-    require(_verifySolutions(solutions), 'Invalid solution');
-    solved = true;
-    _sendBountyToSolver();
+  function solve(uint256 lockNumber, bytes[] memory solution) public requireUnsolved {
+    require(_verifyReveal(lockNumber, solution), "Solution hash doesn't match");
+    require(_verifySolution(lockNumber, solution), 'Invalid solution');
+    lockSolvedStatus[lockNumber] = true;
+    if (_allLocksSolved()) {
+      solved = true;
+      _sendBountyToSolver();
+    }
   }
 
-  function _verifyReveal(bytes[][] memory solutions) private view returns (bool) {
-    Commit storage commit = commits[msg.sender];
+  function _verifyReveal(uint256 lockNumber, bytes[] memory solution) private view returns (bool) {
+    Commit storage commit = commits[msg.sender][lockNumber];
     _requireCommitExists(commit);
     require(block.timestamp - commit.timestamp >= ONE_DAY_IN_SECONDS, 'Cannot reveal within a day of the commit');
 
-    bytes memory solutionEncoding = abi.encode(msg.sender, solutions);
+    bytes memory solutionEncoding = abi.encode(msg.sender, solution);
     bytes32 solutionHash = keccak256(solutionEncoding);
     return BytesLib.equal(abi.encodePacked(solutionHash), commit.solutionHash);
   }
@@ -53,7 +62,18 @@ abstract contract BountyContract {
     require(!BytesLib.equal(commit.solutionHash, ""), 'Not committed yet');
   }
 
-  function _verifySolutions(bytes[][] memory solutions) internal view virtual returns (bool);
+  function _verifySolution(uint256 lockNumber, bytes[] memory solution) internal view virtual returns (bool);
+
+  function _allLocksSolved() private view returns (bool) {
+    bool allSolved = true;
+    for (uint256 lockNumber = 0; lockNumber < lockSolvedStatus.length; lockNumber++) {
+      if (!lockSolvedStatus[lockNumber]) {
+        allSolved = false;
+        break;
+      }
+    }
+    return allSolved;
+  }
 
   function _sendBountyToSolver() private {
     Address.sendValue(payable(msg.sender), bounty());

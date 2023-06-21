@@ -161,8 +161,7 @@ describe('BountyFallbackAccount', function () {
 
     describe('after bounty is solved', () => {
       beforeEach(async () => {
-        const tx = await bountyUtils.solveBounty(bounty)
-        await tx.wait()
+        await bountyUtils.solveBounty(bounty)
       })
 
       it('should return NO_SIG_VALIDATION on wrong lamport signature', async () => {
@@ -188,11 +187,8 @@ describe('BountyFallbackAccount', function () {
       }
 
       beforeEach(async () => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const updateSignatureBeforeBountyIsSolved = await updateSignature(userOpLamportInitial)
-
-        const tx = await bountyUtils.solveBounty(bounty)
-        await tx.wait()
+        await updateSignature(userOpLamportInitial)
+        await bountyUtils.solveBounty(bounty)
       })
 
       it('should not allow same lamport signature twice', async () => {

@@ -2,7 +2,7 @@ import { BigNumber } from 'ethers'
 import { JsonRpcSigner } from '@ethersproject/providers/src.ts/json-rpc-provider'
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import BountyUtils from './bounty-utils'
+import BountyUtils, { submitSolution } from './bounty-utils'
 import { BountyContract } from '../../typechain'
 import { arrayify } from 'ethers/lib/utils'
 import { Buffer } from 'buffer'
@@ -24,18 +24,22 @@ function getBountyTest (bountyUtils: BountyUtils) {
       let arbitraryUser: JsonRpcSigner
       let previousBalance: BigNumber
 
+      async function getBalance (): Promise<BigNumber> {
+        return await arbitraryUser.getBalance()
+      }
+
       before(async () => {
         arbitraryUser = ethers.provider.getSigner(1)
       })
 
       beforeEach(async () => {
-        previousBalance = await arbitraryUser.getBalance()
         await bounty.addToBounty({ value: arbitraryBountyAmount })
       })
 
       describe('Correct Signatures', () => {
         beforeEach(async () => {
-          await bountyUtils.solveBounty(bounty)
+          const result = await bountyUtils.solveBounty(bounty, getBalance)
+          previousBalance = result.userBalanceBeforeFinalTransaction
         })
 
         it('should have a bounty of zero afterwards', async () => {
@@ -59,13 +63,14 @@ function getBountyTest (bountyUtils: BountyUtils) {
         })
 
         it('should not allow further solve attempts if already solved', async () => {
-          const tx = bountyUtils.solveBounty(bounty)
+          const tx = submitSolution(0, [Buffer.from('')], bounty)
           await expect(tx).to.be.revertedWith('Already solved')
         })
       })
 
       describe('Incorrect Signatures', () => {
         beforeEach(async () => {
+          previousBalance = await getBalance()
           const tx = bountyUtils.solveBountyIncorrectly(bounty)
           await expect(tx).to.be.revertedWith('Invalid solution')
         })
@@ -75,7 +80,7 @@ function getBountyTest (bountyUtils: BountyUtils) {
         })
 
         it('should not send the bounty to the user', async () => {
-          const latestTXGasCosts = await bountyUtils.getLatestSolvedIncorrectlyGasCost()
+          const latestTXGasCosts = await bountyUtils.getLatestSolvedGasCost()
           const newBalance = await arbitraryUser.getBalance()
           expect(newBalance).equal(previousBalance.sub(latestTXGasCosts))
         })
@@ -128,12 +133,13 @@ function getBountyTest (bountyUtils: BountyUtils) {
     })
 
     describe('Commit reveal', () => {
+      const arbitraryLockNumber = 0
       const arbitrarySolutionHash = '0x0000000000000000000000000000000000000000000000000000000000000001'
       const arbitrarySolutionHashBuffer = Buffer.from(arrayify(arbitrarySolutionHash))
 
       it('should be able to retrieve commit info', async () => {
-        await bounty.commitSolution(arbitrarySolutionHashBuffer)
-        const [hash, timestamp] = await bounty.callStatic.getMyCommit()
+        await bounty.commitSolution(arbitraryLockNumber, arbitrarySolutionHashBuffer)
+        const [hash, timestamp] = await bounty.callStatic.getMyCommit(arbitraryLockNumber)
         expect(hash).to.be.eq(arbitrarySolutionHash)
 
         const blockNumBefore = await ethers.provider.getBlockNumber()
@@ -144,37 +150,54 @@ function getBountyTest (bountyUtils: BountyUtils) {
 
       it('should be able to override a commit', async () => {
         const arbitrarySolutionHash2 = '0x0000000000000000000000000000000000000000000000000000000000000002'
-        await bounty.commitSolution(arbitrarySolutionHashBuffer)
-        await bounty.commitSolution(Buffer.from(arrayify(arbitrarySolutionHash2)))
-        const [hash] = await bounty.callStatic.getMyCommit()
+        await bounty.commitSolution(arbitraryLockNumber, arbitrarySolutionHashBuffer)
+        await bounty.commitSolution(arbitraryLockNumber, Buffer.from(arrayify(arbitrarySolutionHash2)))
+        const [hash] = await bounty.callStatic.getMyCommit(arbitraryLockNumber)
         expect(hash).to.be.eq(arbitrarySolutionHash2)
       })
 
       it('should revert getting my commit if no commit was made', async () => {
-        const tx = bounty.getMyCommit()
+        const tx = bounty.getMyCommit(arbitraryLockNumber)
         await expect(tx).to.be.revertedWith('Not committed yet')
       })
 
       it('should not allow commits if already solved', async () => {
         await bountyUtils.solveBounty(bounty)
-        const tx = bounty.commitSolution(arbitrarySolutionHashBuffer)
+        const tx = bounty.commitSolution(arbitraryLockNumber, arbitrarySolutionHashBuffer)
         await expect(tx).to.be.revertedWith('Already solved')
       })
 
       it('should not allow a reveal without a commit', async () => {
-        const arbitrarySolutions: bytes[][] = []
-        const tx = bounty.widthdraw(arbitrarySolutions)
+        const arbitrarySolution: bytes[] = []
+        const tx = bounty.solve(arbitraryLockNumber, arbitrarySolution)
         await expect(tx).to.be.revertedWith('Not committed yet')
       })
 
       it('should not allow a reveal within a day of the commit', async () => {
-        const arbitrarySolutions: bytes[][] = []
-        await bounty.commitSolution(arbitrarySolutionHashBuffer)
+        const arbitrarySolutions: bytes[] = []
+        await bounty.commitSolution(arbitraryLockNumber, arbitrarySolutionHashBuffer)
 
         const justBeforeADay = bountyUtils.ONE_DAY_IN_SECONDS - ONE_MINUTE_IN_SECONDS
         await time.increase(justBeforeADay)
-        const txReveal = bounty.widthdraw(arbitrarySolutions)
+        const txReveal = bounty.solve(arbitraryLockNumber, arbitrarySolutions)
         await expect(txReveal).to.be.revertedWith('Cannot reveal within a day of the commit')
+      })
+    })
+
+    describe('Track individual lock status', () => {
+      const arbitraryBountyAmount = 1
+
+      beforeEach(async () => {
+        await bounty.addToBounty({ value: arbitraryBountyAmount })
+        await bountyUtils.solveBountyPartially(bounty)
+      })
+
+      it('should not set the bounty as solved', async () => {
+        expect(await bounty.solved()).to.eq(false)
+      })
+
+      it('should not send the bounty funds', async () => {
+        expect(await bounty.bounty()).to.eq(arbitraryBountyAmount)
       })
     })
   }

@@ -3,11 +3,11 @@ pragma solidity ^0.8.12;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
+import "../PrimeFactoringBounty.sol";
 
 
-contract RsaUfoAccumulator {
-  bytes[] public locks;
-  bool public isDone;
+contract RsaUfoAccumulator is PrimeFactoringBounty {
+  bool public generationIsDone;
 
   uint256 private numberOfLocks;
   uint256 private bytesPerPrime;
@@ -20,13 +20,13 @@ contract RsaUfoAccumulator {
     numberOfLocks = numberOfLocksInit;
     bytesPerPrime = bytesPerPrimeInit;
 
-    locks = new bytes[](numberOfLocks);
+    initLocks(numberOfLocks);
     currentLock = "";
     bytesPerLock = 3 * bytesPerPrime;
   }
 
-  function accumulate(bytes memory randomBytes) public {
-    if (isDone) return;
+  function accumulate(bytes memory randomBytes) internal {
+    if (generationIsDone) return;
 
     uint256 numBytesToAccumulate = Math.min(randomBytes.length, bytesPerLock - currentLock.length);
     bytes memory bytesToAccumulate = BytesLib.slice(randomBytes, 0, numBytesToAccumulate);
@@ -38,6 +38,6 @@ contract RsaUfoAccumulator {
       currentLock = "";
     }
 
-    if (currentLockNumber >= numberOfLocks) isDone = true;
+    if (currentLockNumber >= numberOfLocks) generationIsDone = true;
   }
 }
