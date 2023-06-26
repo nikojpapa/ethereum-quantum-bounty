@@ -2,9 +2,15 @@ import { JsonRpcSigner } from '@ethersproject/providers/src.ts/json-rpc-provider
 import { bytes } from '../../solidityTypes'
 import { ethers, web3 } from 'hardhat'
 import { BountyContract, SignatureBounty, SignatureBounty__factory } from '../../../typechain'
-import { ContractTransaction } from 'ethers'
-import BountyUtils from '../bounty-utils'
+import { BigNumber, ContractTransaction } from 'ethers'
+import BountyUtils, {
+  getLatestSolvedGasCost,
+  SolveAttemptResult,
+  solveBountyReturningUserBalanceBeforeFinalSolution,
+  submitSolution
+} from '../bounty-utils'
 import { arrayify } from 'ethers/lib/utils'
+import { Buffer } from 'buffer'
 
 class SignatureBountyUtils extends BountyUtils {
   private readonly numberOfLocks: number
@@ -34,24 +40,24 @@ class SignatureBountyUtils extends BountyUtils {
     return this._publicKeys
   }
 
-  public async solveBounty (bounty: SignatureBounty): Promise<Promise<ContractTransaction>> {
-    const message = this.arbitraryMessage()
-    const signatures = await this.getSignatures(message)
-    const signaturesWithMessages = signatures.map(signature => [message, signature])
-    return this._attemptBountySolve(bounty, signaturesWithMessages)
+  public async solveBounty (bounty: SignatureBounty, getUserBalance: () => Promise<BigNumber>): Promise<SolveAttemptResult> {
+    return solveBountyReturningUserBalanceBeforeFinalSolution(await this.getSignaturesWithMessages(bounty), bounty, getUserBalance)
   }
 
-  public async solveBountyIncorrectly (bounty: SignatureBounty): Promise<Promise<ContractTransaction>> {
-    const message = this.arbitraryMessage()
-    const signatures = await this.getSignatures(message)
-    const incorrectSignatures = signatures.map(_ => signatures[0])
-    const incorrectSignaturesWithMessages = incorrectSignatures.map(signature => [message, signatures[0]])
-    return this._attemptBountySolve(bounty, incorrectSignaturesWithMessages)
+  public async solveBountyPartially (bounty: SignatureBounty): Promise<void> {
+    const signaturesWithMessages = await this.getSignaturesWithMessages(bounty)
+    await submitSolution(0, signaturesWithMessages[0], bounty)
   }
 
-  private async _attemptBountySolve (bounty: SignatureBounty, signatures: string[][]): Promise<Promise<ContractTransaction>> {
-    const arbitraryUser = ethers.provider.getSigner(1)
-    return bounty.connect(arbitraryUser).widthdraw(signatures)
+  public async solveBountyIncorrectly (bounty: SignatureBounty): Promise<ContractTransaction> {
+    const signaturesWithMessages = await this.getSignaturesWithMessages(bounty)
+    return submitSolution(1, signaturesWithMessages[0], bounty)
+  }
+
+  private async getSignaturesWithMessages (bounty: SignatureBounty): Promise<string[][]> {
+    const message = this.arbitraryMessage()
+    const signatures = await this.getSignatures(message)
+    return signatures.map(signature => [message, signature])
   }
 
   private async getSignatures (message: string): Promise<string[]> {
@@ -73,6 +79,10 @@ class SignatureBountyUtils extends BountyUtils {
       }
     }
     return this._signers
+  }
+
+  public async getLatestSolvedGasCost (): Promise<BigNumber> {
+    return getLatestSolvedGasCost(this._signatures.length)
   }
 }
 

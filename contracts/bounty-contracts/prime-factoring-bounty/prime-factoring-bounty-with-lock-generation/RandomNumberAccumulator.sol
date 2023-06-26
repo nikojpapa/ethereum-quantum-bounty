@@ -78,7 +78,7 @@ contract RandomNumberAccumulator {
     primeCandidate = '';
   }
 
-  function _primeCandidateIsReset() private returns (bool) {
+  function _primeCandidateIsReset() private view returns (bool) {
     return BytesLib.equal(primeCandidate, '');
   }
 

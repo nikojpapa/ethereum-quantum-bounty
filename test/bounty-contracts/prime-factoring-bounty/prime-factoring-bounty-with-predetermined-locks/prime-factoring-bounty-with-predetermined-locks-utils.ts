@@ -1,7 +1,12 @@
 import { bytes } from '../../../solidityTypes'
 import { ethers } from 'hardhat'
-import { ContractTransaction } from 'ethers'
-import BountyUtils from '../../bounty-utils'
+import { BigNumber, ContractTransaction } from 'ethers'
+import BountyUtils, {
+  getLatestSolvedGasCost,
+  SolveAttemptResult,
+  solveBountyReturningUserBalanceBeforeFinalSolution,
+  submitSolution
+} from '../../bounty-utils'
 import {
   BountyContract,
   PrimeFactoringBountyWithPredeterminedLocks,
@@ -30,27 +35,30 @@ class PrimeFactoringBountyWithPredeterminedLocksUtils extends BountyUtils {
 
   public async deployBounty (): Promise<PrimeFactoringBountyWithPredeterminedLocks> {
     const ethersSigner = ethers.provider.getSigner()
-    return await new PrimeFactoringBountyWithPredeterminedLocks__factory(ethersSigner).deploy(await this.getLocks())
+    const locks = await this.getLocks()
+    const bounty = await new PrimeFactoringBountyWithPredeterminedLocks__factory(ethersSigner).deploy(locks.length)
+    for (let i = 0; i < locks.length; i++) {
+      await bounty.setLock(i, locks[i])
+    }
+    return bounty
   }
 
   public async getLocks (): Promise<bytes[]> {
     return Promise.resolve(this.locksAndKeys.map(x => Buffer.from(arrayify(x.lock))))
   }
 
-  public async solveBounty (bounty: BountyContract): Promise<Promise<ContractTransaction>> {
-    const primes = this._getPrimes()
-    return this._attemptBountySolve(bounty, primes)
+  public async solveBounty (bounty: BountyContract, getUserBalance?: () => Promise<BigNumber>): Promise<SolveAttemptResult> {
+    return solveBountyReturningUserBalanceBeforeFinalSolution(this._getPrimes(), bounty, getUserBalance)
   }
 
-  public async solveBountyIncorrectly (bounty: BountyContract): Promise<Promise<ContractTransaction>> {
+  public async solveBountyPartially (bounty: BountyContract): Promise<void> {
     const primes = this._getPrimes()
-    const incorrectPrimes = primes.map(_ => primes[0])
-    return this._attemptBountySolve(bounty, incorrectPrimes)
+    await submitSolution(0, primes[0], bounty)
   }
 
-  private async _attemptBountySolve (bounty: BountyContract, primes: bytes[][]): Promise<Promise<ContractTransaction>> {
-    const arbitraryUser = ethers.provider.getSigner(1)
-    return bounty.connect(arbitraryUser).widthdraw(primes)
+  public async solveBountyIncorrectly (bounty: BountyContract): Promise<ContractTransaction> {
+    const primes = this._getPrimes()
+    return await submitSolution(1, primes[0], bounty)
   }
 
   private _getPrimes (): bytes[][] {
@@ -58,6 +66,10 @@ class PrimeFactoringBountyWithPredeterminedLocksUtils extends BountyUtils {
     return primes.map(primesForLock =>
       primesForLock.map(prime =>
         Buffer.from(arrayify(prime))))
+  }
+
+  public async getLatestSolvedGasCost (): Promise<BigNumber> {
+    return getLatestSolvedGasCost(this.locksAndKeys.length)
   }
 }
 

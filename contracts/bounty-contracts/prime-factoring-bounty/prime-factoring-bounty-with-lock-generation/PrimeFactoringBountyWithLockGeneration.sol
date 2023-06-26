@@ -28,7 +28,7 @@ contract PrimeFactoringBountyWithLockGeneration is PrimeFactoringBounty, VRFCons
 
     randomNumberAccumulator = new RandomNumberAccumulator(numberOfLocks, primesPerLock, bytesPerPrime);
 
-    locks = new bytes[](numberOfLocks);
+    initLocks(numberOfLocks);
     generateLargePrimes();
   }
 
