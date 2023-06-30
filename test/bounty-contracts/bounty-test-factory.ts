@@ -19,6 +19,30 @@ function getBountyTest (bountyUtils: BountyUtils) {
       bounty = await bountyUtils.deployBounty()
     })
 
+    describe('sanity solution check', () => {
+      let lockNumber: number
+      let numberOfSolutionComponents: number
+      let solution: bytes[]
+
+      beforeEach(async () => {
+        lockNumber = (await bounty.SANITY_CHECK_LOCK_NUMBER()).toNumber()
+        numberOfSolutionComponents = (await bounty.callStatic.sanityCheckLockSolutionLength()).toNumber()
+        solution = await Promise.all(Array(numberOfSolutionComponents).fill(BigNumber.from(0))
+          .map(async (_, i) => bounty.SANITY_CHECK_LOCK_SOLUTION(i)))
+      })
+
+      it('should allow a sanity solution check', async () => {
+        const tx = submitSolution(lockNumber, solution, bounty)
+        await expect(tx).to.not.be.reverted
+      })
+
+      it('should revert an incorrect sanity solution check', async () => {
+        const invalidSolution = solution.map(_ => solution[1])
+        const tx = submitSolution(lockNumber, invalidSolution, bounty)
+        await expect(tx).to.be.revertedWith('Invalid solution')
+      })
+    })
+
     describe('Withdraw', () => {
       const arbitraryBountyAmount = BigNumber.from(100)
       let arbitraryUser: JsonRpcSigner

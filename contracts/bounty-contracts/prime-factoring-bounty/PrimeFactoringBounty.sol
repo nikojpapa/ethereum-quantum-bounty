@@ -11,6 +11,13 @@ import "./miller-rabin/MillerRabin.sol";
 abstract contract PrimeFactoringBounty is BountyContract {
   using BigNumbers for *;
 
+  constructor(uint256 numberOfLocks)
+    BountyContract(numberOfLocks)
+  {
+    SANITY_CHECK_LOCK_VALUE = abi.encodePacked(uint8(15));
+    SANITY_CHECK_LOCK_SOLUTION = [abi.encodePacked(uint8(3)), abi.encodePacked(uint8(5))];
+  }
+
   function _verifySolution(uint256 lockNumber, bytes[] memory solution) internal view override returns (bool) {
     BigNumber memory product = BigNumbers.one();
     for (uint256 i = 0; i < solution.length; i++) {
@@ -19,7 +26,7 @@ abstract contract PrimeFactoringBounty is BountyContract {
       product = product.mul(primeFactor.init(false));
     }
 
-    BigNumber memory lock = locks[lockNumber].init(false);
+    BigNumber memory lock = getLockValue(lockNumber).init(false);
     return product.eq(lock);
   }
 }

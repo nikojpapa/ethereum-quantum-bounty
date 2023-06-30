@@ -9,18 +9,17 @@ import "../PrimeFactoringBounty.sol";
 contract RsaUfoAccumulator is PrimeFactoringBounty {
   bool public generationIsDone;
 
-  uint256 private numberOfLocks;
   uint256 private bytesPerPrime;
 
   bytes private currentLock;
   uint256 private currentLockNumber;
   uint256 private bytesPerLock;
 
-  constructor(uint256 numberOfLocksInit, uint256 bytesPerPrimeInit) {
-    numberOfLocks = numberOfLocksInit;
+  constructor(uint256 numberOfLocks, uint256 bytesPerPrimeInit)
+    PrimeFactoringBounty(numberOfLocks)
+  {
     bytesPerPrime = bytesPerPrimeInit;
 
-    initLocks(numberOfLocks);
     currentLock = "";
     bytesPerLock = 3 * bytesPerPrime;
   }

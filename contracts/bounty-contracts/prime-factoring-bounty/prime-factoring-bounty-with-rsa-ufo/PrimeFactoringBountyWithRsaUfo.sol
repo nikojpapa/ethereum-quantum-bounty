@@ -17,7 +17,7 @@ import "./RsaUfoAccumulator.sol";
  * is difficult to factor.
  */
 contract PrimeFactoringBountyWithRsaUfo is RsaUfoAccumulator {
-  uint256 iteration;
+  uint256 private iteration;
 
   constructor(uint256 numberOfLocksInit, uint256 bytesPerPrimeInit)
     RsaUfoAccumulator(numberOfLocksInit, bytesPerPrimeInit) {}

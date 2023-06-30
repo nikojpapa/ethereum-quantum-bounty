@@ -14,10 +14,10 @@ contract PrimeFactoringBountyWithLockGeneration is PrimeFactoringBounty, VRFCons
   bytes32 internal keyHash;
   uint256 internal fee;
 
-  RandomNumberAccumulator randomNumberAccumulator;
+  RandomNumberAccumulator private randomNumberAccumulator;
 
   constructor(uint256 numberOfLocks, uint256 primesPerLock, uint256 bytesPerPrime)
-    PrimeFactoringBounty()
+    PrimeFactoringBounty(numberOfLocks)
     VRFConsumerBase(
       0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9, // VRF Coordinator
       0xa36085F69e2889c224210F603D836748e7dC0088  // LINK Token
@@ -27,8 +27,6 @@ contract PrimeFactoringBountyWithLockGeneration is PrimeFactoringBounty, VRFCons
     fee = 0; //0.1 * 10 ** 18; // 0.1 LINK
 
     randomNumberAccumulator = new RandomNumberAccumulator(numberOfLocks, primesPerLock, bytesPerPrime);
-
-    initLocks(numberOfLocks);
     generateLargePrimes();
   }
 

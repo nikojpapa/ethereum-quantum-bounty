@@ -8,22 +8,39 @@ abstract contract BountyContract {
   bytes[] public locks;
   bool[] public lockSolvedStatus;
   bool public solved;
+  uint256 public numberOfLocks;
+
+  uint256 public SANITY_CHECK_LOCK_NUMBER;
+  bytes public SANITY_CHECK_LOCK_VALUE;
+  bytes[] public SANITY_CHECK_LOCK_SOLUTION;
+  function sanityCheckLockSolutionLength() public view returns (uint256) {
+    return SANITY_CHECK_LOCK_SOLUTION.length;
+  }
 
   struct Commit {
     bytes solutionHash;
     uint256 timestamp;
   }
   mapping(address => mapping(uint256 => Commit)) private commits;
-  uint256 ONE_DAY_IN_SECONDS = 86400;
+  uint256 private ONE_DAY_IN_SECONDS = 86400;
+
+  constructor(uint256 numberOfLocksInit) {
+    numberOfLocks = numberOfLocksInit;
+    locks = new bytes[](numberOfLocks);
+    lockSolvedStatus = new bool[](numberOfLocks);
+    SANITY_CHECK_LOCK_NUMBER = numberOfLocks;
+  }
 
   modifier requireUnsolved() {
     require(!solved, 'Already solved');
     _;
   }
 
-  function initLocks(uint256 numberOfLocks) internal {
-    locks = new bytes[](numberOfLocks);
-    lockSolvedStatus = new bool[](numberOfLocks);
+  function getLockValue(uint256 lockNumber) internal view returns (bytes memory) {
+    if (lockNumber == SANITY_CHECK_LOCK_NUMBER) {
+      return SANITY_CHECK_LOCK_VALUE;
+    }
+    return locks[lockNumber];
   }
 
   function commitSolution(uint256 lockNumber, bytes memory solutionHash) public requireUnsolved {
@@ -41,6 +58,8 @@ abstract contract BountyContract {
   function solve(uint256 lockNumber, bytes[] memory solution) public requireUnsolved {
     require(_verifyReveal(lockNumber, solution), "Solution hash doesn't match");
     require(_verifySolution(lockNumber, solution), 'Invalid solution');
+    if (lockNumber == SANITY_CHECK_LOCK_NUMBER) return;
+
     lockSolvedStatus[lockNumber] = true;
     if (_allLocksSolved()) {
       solved = true;
