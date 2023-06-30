@@ -41,20 +41,20 @@ class SignatureBountyUtils extends BountyUtils {
   }
 
   public async solveBounty (bounty: SignatureBounty, getUserBalance: () => Promise<BigNumber>): Promise<SolveAttemptResult> {
-    return solveBountyReturningUserBalanceBeforeFinalSolution(await this.getSignaturesWithMessages(bounty), bounty, getUserBalance)
+    return solveBountyReturningUserBalanceBeforeFinalSolution(await this.getSignaturesWithMessages(), bounty, getUserBalance)
   }
 
   public async solveBountyPartially (bounty: SignatureBounty): Promise<void> {
-    const signaturesWithMessages = await this.getSignaturesWithMessages(bounty)
+    const signaturesWithMessages = await this.getSignaturesWithMessages()
     await submitSolution(0, signaturesWithMessages[0], bounty)
   }
 
   public async solveBountyIncorrectly (bounty: SignatureBounty): Promise<ContractTransaction> {
-    const signaturesWithMessages = await this.getSignaturesWithMessages(bounty)
+    const signaturesWithMessages = await this.getSignaturesWithMessages()
     return submitSolution(1, signaturesWithMessages[0], bounty)
   }
 
-  private async getSignaturesWithMessages (bounty: SignatureBounty): Promise<string[][]> {
+  private async getSignaturesWithMessages (): Promise<string[][]> {
     const message = this.arbitraryMessage()
     const signatures = await this.getSignatures(message)
     return signatures.map(signature => [message, signature])
