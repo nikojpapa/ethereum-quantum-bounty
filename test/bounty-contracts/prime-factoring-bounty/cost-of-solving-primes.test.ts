@@ -82,7 +82,7 @@ describe('Test the cost of solving the prime factoring bounty', () => {
       }
       return gasUsed
     }
-    await printMaxGasFromMultipleIterations(gasGetter)
+    await printMaxGasFromMultipleIterations(gasGetter, 'ALL LOCKS')
   })
 
   it('should find the gas cost to solve 1 locks of size 3072 bits', async () => {
@@ -92,7 +92,7 @@ describe('Test the cost of solving the prime factoring bounty', () => {
       const receipt = await tx.wait()
       return receipt.gasUsed
     }
-    await printMaxGasFromMultipleIterations(gasGetter)
+    await printMaxGasFromMultipleIterations(gasGetter, 'ONE LOCK')
   })
 
   it('should find the gas cost to solve the sanity check lock', async () => {
@@ -106,6 +106,6 @@ describe('Test the cost of solving the prime factoring bounty', () => {
       const receipt = await tx.wait()
       return receipt.gasUsed
     }
-    await printMaxGasFromMultipleIterations(gasGetter)
+    await printMaxGasFromMultipleIterations(gasGetter, 'SANITY LOCK')
   })
 })
