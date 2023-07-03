@@ -9,10 +9,9 @@ import { arrayify } from 'ethers/lib/utils'
 import { expect } from 'chai'
 import { submitSolution } from '../bounty-utils'
 
-describe.skip('Test the cost of solving the prime factoring bounty', () => {
+describe('Test the cost of solving the prime factoring bounty', () => {
   let bounty: PrimeFactoringBountyWithPredeterminedLocks
   let solutions: bytes[][]
-  let gasUsed: BigNumber
 
   async function deployBounty (locks: bytes[]): Promise<PrimeFactoringBountyWithPredeterminedLocks> {
     const ethersSigner = ethers.provider.getSigner()
@@ -23,10 +22,9 @@ describe.skip('Test the cost of solving the prime factoring bounty', () => {
     return bounty
   }
 
-  beforeEach(async () => {
+  async function initRun (): Promise<void> {
     const numberOfLocks = 120
     const bytesPerPrime = 128
-    gasUsed = BigNumber.from(0)
 
     const primesOf100 = [
       BigNumber.from(2),
@@ -58,22 +56,56 @@ describe.skip('Test the cost of solving the prime factoring bounty', () => {
     solutions = locks.map(() => solutionsPerLock)
 
     bounty = await deployBounty(locks)
-  })
+  }
+
+  async function printMaxGasFromMultipleIterations (gasCalculator: () => Promise<BigNumber>, label: string): Promise<void> {
+    const gasUseds: BigNumber[] = []
+    let maxGasUsed = BigNumber.from(0)
+    for (let j = 0; j < 10; j++) {
+      await initRun()
+      const gasUsed = await gasCalculator()
+      gasUseds.push(gasUsed)
+      if (gasUsed.gt(maxGasUsed)) maxGasUsed = gasUsed
+      console.log(`${label}: Gas used this iteration: ${gasUsed.toHexString()}`)
+      console.log(`${label}: Max gas used: ${maxGasUsed.toHexString()}`)
+    }
+    console.log(`${label}: Gas useds: ${gasUseds.map(x => x.toHexString()).join(', ')}`)
+  }
 
   it('should find the gas cost to solve 120 locks of size 3072 bits', async () => {
-    for (let i = 0; i < solutions.length; i++) {
-      const tx = await submitSolution(i, solutions[i], bounty)
-      const receipt = await tx.wait()
-      gasUsed = gasUsed.add(receipt.gasUsed)
+    const gasGetter = async (): Promise<BigNumber> => {
+      let gasUsed = BigNumber.from(0)
+      for (let i = 0; i < solutions.length; i++) {
+        const tx = await submitSolution(i, solutions[i], bounty)
+        const receipt = await tx.wait()
+        gasUsed = gasUsed.add(receipt.gasUsed)
+      }
+      return gasUsed
     }
-    expect(gasUsed).to.equal(BigNumber.from(0x1b2befab))
+    await printMaxGasFromMultipleIterations(gasGetter)
   })
 
   it('should find the gas cost to solve 1 locks of size 3072 bits', async () => {
-    const arbitraryLockNumber = 0
-    const tx = await submitSolution(arbitraryLockNumber, solutions[arbitraryLockNumber], bounty)
-    const receipt = await tx.wait()
-    gasUsed = gasUsed.add(receipt.gasUsed)
-    expect(gasUsed).to.equal(BigNumber.from(0x4b423d))
+    const gasGetter = async (): Promise<BigNumber> => {
+      const arbitraryLockNumber = 0
+      const tx = await submitSolution(arbitraryLockNumber, solutions[arbitraryLockNumber], bounty)
+      const receipt = await tx.wait()
+      return receipt.gasUsed
+    }
+    await printMaxGasFromMultipleIterations(gasGetter)
+  })
+
+  it('should find the gas cost to solve the sanity check lock', async () => {
+    const gasGetter = async (): Promise<BigNumber> => {
+      const lockNumber = await bounty.SANITY_CHECK_LOCK_NUMBER()
+      const lockSolution = []
+      for (let i = 0; i < (await bounty.sanityCheckLockSolutionLength()).toNumber(); i++) {
+        lockSolution.push(await bounty.SANITY_CHECK_LOCK_SOLUTION(i))
+      }
+      const tx = await submitSolution(lockNumber.toNumber(), lockSolution, bounty)
+      const receipt = await tx.wait()
+      return receipt.gasUsed
+    }
+    await printMaxGasFromMultipleIterations(gasGetter)
   })
 })
