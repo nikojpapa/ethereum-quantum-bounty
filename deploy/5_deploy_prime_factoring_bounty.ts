@@ -11,7 +11,7 @@ const deployPrimeFactoringBounty: DeployFunction = async function (hre: HardhatR
   const from = await provider.getSigner().getAddress()
   await new Create2Factory(ethers.provider).deployFactory()
 
-  const numberOfLocks = 120
+  const numberOfLocks = 119
   const primeByteLength = 128
   let gasUsed = BigNumber.from(0)
 

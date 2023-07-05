@@ -24,7 +24,7 @@ describe('Test the cost of solving the prime factoring bounty', () => {
   }
 
   async function initRun (): Promise<void> {
-    const numberOfLocks = 120
+    const numberOfLocks = 119
     const bytesPerPrime = 128
 
     const primesOf100 = [

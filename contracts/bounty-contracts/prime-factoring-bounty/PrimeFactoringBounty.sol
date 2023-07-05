@@ -11,12 +11,7 @@ import "./miller-rabin/MillerRabin.sol";
 abstract contract PrimeFactoringBounty is BountyContract {
   using BigNumbers for *;
 
-  constructor(uint256 numberOfLocks)
-    BountyContract(numberOfLocks)
-  {
-    SANITY_CHECK_LOCK_VALUE = abi.encodePacked(uint8(15));
-    SANITY_CHECK_LOCK_SOLUTION = [abi.encodePacked(uint8(3)), abi.encodePacked(uint8(5))];
-  }
+  constructor(uint256 numberOfLocks) BountyContract(numberOfLocks) {}
 
   function _verifySolution(uint256 lockNumber, bytes[] memory solution) internal view override returns (bool) {
     BigNumber memory product = BigNumbers.one();
