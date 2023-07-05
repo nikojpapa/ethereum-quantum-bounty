@@ -62,7 +62,7 @@ describe('Test the cost of solving the prime factoring bounty', () => {
   async function printMaxGasFromMultipleIterations (gasCalculator: () => Promise<BigNumber>, label: string): Promise<void> {
     const gasUseds: BigNumber[] = []
     let maxGasUsed = BigNumber.from(0)
-    for (let j = 0; j < 2; j++) {
+    for (let j = 0; j < 10; j++) {
       await initRun()
       const gasUsed = await gasCalculator()
       gasUseds.push(gasUsed)
@@ -104,12 +104,13 @@ describe('Test the cost of solving the prime factoring bounty', () => {
   })
 
   it('should find the gas cost to solve the sanity check lock', async () => {
-    const lockNumber = await bounty.SANITY_CHECK_LOCK_NUMBER()
-    const lockSolution: bytes[] = []
-    for (let i = 0; i < (await bounty.sanityCheckLockSolutionLength()).toNumber(); i++) {
-      lockSolution.push(await bounty.SANITY_CHECK_LOCK_SOLUTION(i))
-    }
     const gasGetter = async (): Promise<BigNumber> => {
+      const lockNumber = await bounty.SANITY_CHECK_LOCK_NUMBER()
+      const lockSolution: bytes[] = []
+      for (let i = 0; i < (await bounty.sanityCheckLockSolutionLength()).toNumber(); i++) {
+        lockSolution.push(await bounty.SANITY_CHECK_LOCK_SOLUTION(i))
+      }
+
       const tx = await submitSolution(lockNumber.toNumber(), lockSolution, bounty)
       const receipt = await tx.wait()
       return receipt.gasUsed
