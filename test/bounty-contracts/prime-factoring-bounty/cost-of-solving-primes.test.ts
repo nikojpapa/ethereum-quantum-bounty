@@ -24,7 +24,7 @@ describe.skip('Test the cost of solving the prime factoring bounty', () => {
   }
 
   beforeEach(async () => {
-    const numberOfLocks = 120
+    const numberOfLocks = 119
     const bytesPerPrime = 128
     gasUsed = BigNumber.from(0)
 
