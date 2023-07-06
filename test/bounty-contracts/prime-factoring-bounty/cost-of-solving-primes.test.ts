@@ -1,21 +1,26 @@
 import { bytes } from '../../solidityTypes'
 import {
+  BountyContract, GasCalculator,
+  GasCalculator__factory,
   PrimeFactoringBountyWithPredeterminedLocks,
   PrimeFactoringBountyWithPredeterminedLocks__factory
 } from '../../../typechain'
 import { ethers } from 'hardhat'
-import { BigNumber } from 'ethers'
+import { BigNumber, ContractTransaction } from 'ethers'
 import { arrayify } from 'ethers/lib/utils'
 import { expect } from 'chai'
 import { submitSolution } from '../bounty-utils'
-import * as fs from 'fs'
 
 describe('Test the cost of solving the prime factoring bounty', () => {
+  const numberOfLocks = 119
+  const bytesPerPrime = 128
+  const ethersSigner = ethers.provider.getSigner()
+
   let bounty: PrimeFactoringBountyWithPredeterminedLocks
+  let locks: string[]
   let solutions: bytes[][]
 
   async function deployBounty (locks: bytes[]): Promise<PrimeFactoringBountyWithPredeterminedLocks> {
-    const ethersSigner = ethers.provider.getSigner()
     const bounty = await new PrimeFactoringBountyWithPredeterminedLocks__factory(ethersSigner).deploy(locks.length)
     for (let i = 0; i < locks.length; i++) {
       await bounty.setLock(i, locks[i])
@@ -23,10 +28,7 @@ describe('Test the cost of solving the prime factoring bounty', () => {
     return bounty
   }
 
-  async function initRun (): Promise<void> {
-    const numberOfLocks = 119
-    const bytesPerPrime = 128
-
+  before(async () => {
     const primesOf100 = [
       BigNumber.from(2),
       BigNumber.from(2),
@@ -50,21 +52,21 @@ describe('Test the cost of solving the prime factoring bounty', () => {
     }
 
     const numberOfBits = (lockOf3072BitsWithKnownDecomposition.toHexString().length - 2) * 4
-    expect(numberOfBits).to.be.eq(bytesPerPrime * 8 * 3)
+    const bitsPerByte = 8
+    const primeLengthMultiplierAsGivenInRsaUfoAlgorithm = 3
+    expect(numberOfBits).to.be.eq(bytesPerPrime * bitsPerByte * primeLengthMultiplierAsGivenInRsaUfoAlgorithm)
 
-    const locks = new Array(numberOfLocks).fill(0).map(() => lockOf3072BitsWithKnownDecomposition.toHexString())
+    locks = new Array(numberOfLocks).fill(0).map(() => lockOf3072BitsWithKnownDecomposition.toHexString())
     const solutionsPerLock = primeFactors.map(x => Buffer.from(arrayify(x.toHexString())))
     solutions = locks.map(() => solutionsPerLock)
+  })
 
-    bounty = await deployBounty(locks)
-  }
-
-  async function printMaxGasFromMultipleIterations (gasCalculator: () => Promise<BigNumber>, label: string): Promise<void> {
+  async function printMaxGasFromMultipleIterations (gasCalculator: (bounty: BountyContract) => Promise<BigNumber>, label: string): Promise<void> {
     const gasUseds: BigNumber[] = []
     let maxGasUsed = BigNumber.from(0)
     for (let j = 0; j < 10; j++) {
-      await initRun()
-      const gasUsed = await gasCalculator()
+      bounty = await deployBounty(locks)
+      const gasUsed = await gasCalculator(bounty)
       gasUseds.push(gasUsed)
       if (gasUsed.gt(maxGasUsed)) maxGasUsed = gasUsed
 
@@ -73,14 +75,14 @@ describe('Test the cost of solving the prime factoring bounty', () => {
     }
     const allGasString = gasUseds.map(x => x.toHexString()).join(', ')
     console.log(`${label}: Gas useds: ${allGasString}`)
-    fs.writeFile(`${label}_GAS_ESTIMATE.txt`, allGasString, err => {
-      if (err != null) {
-        console.error(err)
-      }
-    })
+    // fs.writeFile(`${label}-GAS_ESTIMATE.txt`, allGasString, err => {
+    //   if (err != null) {
+    //     console.error(err)
+    //   }
+    // })
   }
 
-  it('should find the gas cost to solve 120 locks of size 3072 bits', async () => {
+  it('should find the gas cost to solve all locks', async () => {
     const gasGetter = async (): Promise<BigNumber> => {
       let gasUsed = BigNumber.from(0)
       for (let i = 0; i < solutions.length; i++) {
@@ -90,7 +92,7 @@ describe('Test the cost of solving the prime factoring bounty', () => {
       }
       return gasUsed
     }
-    await printMaxGasFromMultipleIterations(gasGetter, 'ALL LOCKS')
+    await printMaxGasFromMultipleIterations(gasGetter, 'ALL_LOCKS')
   })
 
   it('should find the gas cost to solve 1 locks of size 3072 bits', async () => {
@@ -100,21 +102,34 @@ describe('Test the cost of solving the prime factoring bounty', () => {
       const receipt = await tx.wait()
       return receipt.gasUsed
     }
-    await printMaxGasFromMultipleIterations(gasGetter, 'ONE LOCK')
+    await printMaxGasFromMultipleIterations(gasGetter, 'ONE_LOCK')
   })
 
-  it('should find the gas cost to solve the sanity check lock', async () => {
-    const gasGetter = async (): Promise<BigNumber> => {
-      const lockNumber = await bounty.SANITY_CHECK_LOCK_NUMBER()
-      const lockSolution: bytes[] = []
-      for (let i = 0; i < (await bounty.sanityCheckLockSolutionLength()).toNumber(); i++) {
-        lockSolution.push(await bounty.SANITY_CHECK_LOCK_SOLUTION(i))
-      }
+  describe.only('pieces of solving a lock', () => {
+    let gasCalculator: GasCalculator
 
-      const tx = await submitSolution(lockNumber.toNumber(), lockSolution, bounty)
+    before(async () => {
+      gasCalculator = await new GasCalculator__factory(ethersSigner).deploy()
+    })
+
+    async function printGas (tx: ContractTransaction, label: string): Promise<void> {
       const receipt = await tx.wait()
-      return receipt.gasUsed
+      console.log(`${label}-GAS:`, receipt.gasUsed.toHexString())
     }
-    await printMaxGasFromMultipleIterations(gasGetter, 'SANITY LOCK')
+
+    it('should find the gas cost of Miller-Rabin Primality Test', async () => {
+      const tx = await gasCalculator.millerRabinOnMultipleNumbers(solutions[0])
+      await printGas(tx, 'MILLER_RABIN')
+    })
+
+    it('should find the gas cost of multiplying numbers', async () => {
+      const tx = await gasCalculator.multiplyNumbers(solutions[0])
+      await printGas(tx, 'MULTIPLY')
+    })
+
+    it('should find the gas cost of comparing numbers', async () => {
+      const tx = await gasCalculator.compareNumbers(locks[0], locks[0])
+      await printGas(tx, 'COMPARE')
+    })
   })
 })
