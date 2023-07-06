@@ -1,15 +1,21 @@
 import { bytes } from '../../solidityTypes'
 import {
-  BountyContract, GasCalculator,
+  BountyContract,
+  GasCalculator,
   GasCalculator__factory,
   PrimeFactoringBountyWithPredeterminedLocks,
-  PrimeFactoringBountyWithPredeterminedLocks__factory
+  PrimeFactoringBountyWithPredeterminedLocks__factory,
+  PrimeFactoringBountyWithRsaUfo__factory,
+  RsaUfoAccumulatorTestHelper__factory
 } from '../../../typechain'
 import { ethers } from 'hardhat'
 import { BigNumber, ContractTransaction } from 'ethers'
 import { arrayify } from 'ethers/lib/utils'
 import { expect } from 'chai'
 import { submitSolution } from '../bounty-utils'
+import { randomBytes } from 'crypto'
+
+const BITS_PER_BYTE = 8
 
 describe('Test the cost of solving the prime factoring bounty', () => {
   const numberOfLocks = 119
@@ -52,9 +58,8 @@ describe('Test the cost of solving the prime factoring bounty', () => {
     }
 
     const numberOfBits = (lockOf3072BitsWithKnownDecomposition.toHexString().length - 2) * 4
-    const bitsPerByte = 8
     const primeLengthMultiplierAsGivenInRsaUfoAlgorithm = 3
-    expect(numberOfBits).to.be.eq(bytesPerPrime * bitsPerByte * primeLengthMultiplierAsGivenInRsaUfoAlgorithm)
+    expect(numberOfBits).to.be.eq(bytesPerPrime * BITS_PER_BYTE * primeLengthMultiplierAsGivenInRsaUfoAlgorithm)
 
     locks = new Array(numberOfLocks).fill(0).map(() => lockOf3072BitsWithKnownDecomposition.toHexString())
     const solutionsPerLock = primeFactors.map(x => Buffer.from(arrayify(x.toHexString())))
@@ -105,7 +110,7 @@ describe('Test the cost of solving the prime factoring bounty', () => {
     await printMaxGasFromMultipleIterations(gasGetter, 'ONE_LOCK')
   })
 
-  describe.only('pieces of solving a lock', () => {
+  describe.only('parts of each process', () => {
     let gasCalculator: GasCalculator
 
     before(async () => {
@@ -117,19 +122,43 @@ describe('Test the cost of solving the prime factoring bounty', () => {
       console.log(`${label}-GAS:`, receipt.gasUsed.toHexString())
     }
 
-    it('should find the gas cost of Miller-Rabin Primality Test', async () => {
-      const tx = await gasCalculator.millerRabinOnMultipleNumbers(solutions[0])
-      await printGas(tx, 'MILLER_RABIN')
+    describe('parts of solving a lock', () => {
+      it('should find the gas of Miller-Rabin Primality Test', async () => {
+        const tx = await gasCalculator.millerRabinOnMultipleNumbers(solutions[0])
+        await printGas(tx, 'MILLER_RABIN')
+      })
+
+      it('should find the gas of multiplying numbers', async () => {
+        const tx = await gasCalculator.multiplyNumbers(solutions[0])
+        await printGas(tx, 'MULTIPLY')
+      })
+
+      it('should find the gas of comparing numbers', async () => {
+        const tx = await gasCalculator.compareNumbers(locks[0], locks[0])
+        await printGas(tx, 'COMPARE')
+      })
     })
 
-    it('should find the gas cost of multiplying numbers', async () => {
-      const tx = await gasCalculator.multiplyNumbers(solutions[0])
-      await printGas(tx, 'MULTIPLY')
-    })
+    describe('parts of deploying', () => {
+      it('should find the gas of making a single generation trigger call', async () => {
+        const bounty = await new PrimeFactoringBountyWithRsaUfo__factory(ethersSigner)
+          .deploy(numberOfLocks, bytesPerPrime)
+        const tx = await bounty.triggerLockAccumulation()
+        await printGas(tx, 'SINGLE_ACCUMULATION_TRIGGER')
+      })
 
-    it('should find the gas cost of comparing numbers', async () => {
-      const tx = await gasCalculator.compareNumbers(locks[0], locks[0])
-      await printGas(tx, 'COMPARE')
+      it('should find the gas of generating a random number', async () => {
+        const tx = await gasCalculator.generateRandomBytes()
+        await printGas(tx, 'RANDOM_NUMBER')
+      })
+
+      it('should find the gas of accumulating a number', async () => {
+        const accumulator = await new RsaUfoAccumulatorTestHelper__factory(ethersSigner)
+          .deploy(numberOfLocks, bytesPerPrime)
+        const bitsPerKeccak = 256
+        const tx = await accumulator.triggerAccumulate(randomBytes(bitsPerKeccak / BITS_PER_BYTE))
+        await printGas(tx, 'ACCUMULATE')
+      })
     })
   })
 })

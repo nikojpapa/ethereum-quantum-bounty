@@ -24,4 +24,8 @@ contract GasCalculator {
   function compareNumbers(bytes memory number1, bytes memory number2) public {
     number2.init(false).eq(number1.init(false));
   }
+
+  function generateRandomBytes() public {
+    abi.encodePacked(keccak256(abi.encodePacked(block.difficulty, uint256(0))));
+  }
 }
