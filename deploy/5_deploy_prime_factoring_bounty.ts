@@ -27,11 +27,14 @@ const deployPrimeFactoringBounty: DeployFunction = async function (hre: HardhatR
   gasUsed = gasUsed.add(deployResult.receipt?.gasUsed)
 
   const bounty = await ethers.getContractAt('PrimeFactoringBountyWithRsaUfo', deployResult.address)
+  let numberOfTriggerCalls = 0
   while (!(await bounty.generationIsDone())) {
+    ++numberOfTriggerCalls
     const tx = await bounty.triggerLockAccumulation()
     const receipt = await tx.wait()
     gasUsed = gasUsed.add(receipt.gasUsed)
   }
+  console.log('==PrimeFactoringBounty number of accumulation calls:', numberOfTriggerCalls)
   console.log('==PrimeFactoringBounty gasUsed:', gasUsed.toHexString())
 }
 
