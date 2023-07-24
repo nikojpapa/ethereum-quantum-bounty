@@ -6,7 +6,7 @@ import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
 import "../../BigNumbers.sol";
 import "../miller-rabin/MillerRabin.sol";
 import "../PrimeFactoringBounty.sol";
-import "./RandomNumberAccumulator.sol";
+import "./RandomPrimeAccumulator.sol";
 
 contract PrimeFactoringBountyWithLockGeneration is PrimeFactoringBounty, VRFConsumerBase {
   using BigNumbers for *;
@@ -14,7 +14,7 @@ contract PrimeFactoringBountyWithLockGeneration is PrimeFactoringBounty, VRFCons
   bytes32 internal keyHash;
   uint256 internal fee;
 
-  RandomNumberAccumulator private randomNumberAccumulator;
+  RandomPrimeAccumulator private randomNumberAccumulator;
 
   constructor(uint256 numberOfLocks, uint256 primesPerLock, uint256 bytesPerPrime)
     PrimeFactoringBounty(numberOfLocks)
@@ -26,7 +26,7 @@ contract PrimeFactoringBountyWithLockGeneration is PrimeFactoringBounty, VRFCons
     keyHash = 0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4;
     fee = 0; //0.1 * 10 ** 18; // 0.1 LINK
 
-    randomNumberAccumulator = new RandomNumberAccumulator(numberOfLocks, primesPerLock, bytesPerPrime);
+    randomNumberAccumulator = new RandomPrimeAccumulator(numberOfLocks, primesPerLock, bytesPerPrime);
     generateLargePrimes();
   }
 
