@@ -5,7 +5,7 @@ import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 import "../BountyContract.sol";
-import "./BigNumbers.sol";
+import "../BigNumbers.sol";
 import "./miller-rabin/MillerRabin.sol";
 
 abstract contract PrimeFactoringBounty is BountyContract {
@@ -21,7 +21,7 @@ abstract contract PrimeFactoringBounty is BountyContract {
       product = product.mul(primeFactor.init(false));
     }
 
-    BigNumber memory lock = getLockValue(lockNumber).init(false);
+    BigNumber memory lock = getLockValue(lockNumber)[0].init(false);
     return product.eq(lock);
   }
 }

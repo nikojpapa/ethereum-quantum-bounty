@@ -3,7 +3,7 @@ pragma solidity ^0.8.12;
 
 import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
 
-import "../BigNumbers.sol";
+import "../../BigNumbers.sol";
 import "../miller-rabin/MillerRabin.sol";
 import "../PrimeFactoringBounty.sol";
 import "./RandomNumberAccumulator.sol";
@@ -40,7 +40,7 @@ contract PrimeFactoringBountyWithLockGeneration is PrimeFactoringBounty, VRFCons
     if (!randomNumberAccumulator.isDone()) generateLargePrimes();
     else {
       for (uint256 lockNumber = 0; lockNumber < randomNumberAccumulator.numberOfLocks(); lockNumber++) {
-        locks[lockNumber] = randomNumberAccumulator.locks(lockNumber);
+        locks[lockNumber] = [randomNumberAccumulator.locks(lockNumber)];
       }
     }
   }

@@ -13,12 +13,12 @@ contract SignatureBounty is BountyContract {
       BountyContract(publicKeys.length)
     {
       for (uint256 lockNumber = 0; lockNumber < publicKeys.length; lockNumber++) {
-        locks[lockNumber] = publicKeys[lockNumber];
+        locks[lockNumber] = [publicKeys[lockNumber]];
       }
     }
 
     function _verifySolution(uint256 lockNumber, bytes[] memory solution) internal view override returns (bool) {
-      address lock = BytesLib.toAddress(getLockValue(lockNumber), 0);
+      address lock = BytesLib.toAddress(getLockValue(lockNumber)[0], 0);
       bytes32 message = BytesLib.toBytes32(solution[0], 0);
       bytes memory signature = solution[1];
       return _getSignerAddress(message, signature) == lock;

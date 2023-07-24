@@ -32,11 +32,10 @@ contract RsaUfoAccumulator is PrimeFactoringBounty {
     currentLock = BytesLib.concat(currentLock, bytesToAccumulate);
 
     if (currentLock.length >= bytesPerLock) {
-      locks[currentLockNumber] = currentLock;
+    locks[currentLockNumber] = [randomBytes];
       ++currentLockNumber;
       currentLock = "";
     }
-
     if (currentLockNumber >= numberOfLocks) generationIsDone = true;
   }
 }

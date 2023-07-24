@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 abstract contract BountyContract {
-  bytes[] public locks;
+  bytes[][] public locks;
   bool[] public lockSolvedStatus;
   bool public solved;
   uint256 public numberOfLocks;
@@ -19,7 +19,7 @@ abstract contract BountyContract {
 
   constructor(uint256 numberOfLocksInit) {
     numberOfLocks = numberOfLocksInit;
-    locks = new bytes[](numberOfLocks);
+    locks = new bytes[][](numberOfLocks);
     lockSolvedStatus = new bool[](numberOfLocks);
   }
 
@@ -28,7 +28,7 @@ abstract contract BountyContract {
     _;
   }
 
-  function getLockValue(uint256 lockNumber) internal view returns (bytes memory) {
+  function getLockValue(uint256 lockNumber) internal view returns (bytes[] memory) {
     return locks[lockNumber];
   }
 

@@ -80,7 +80,7 @@ abstract class BountyUtils {
     throw new Error('deploySignatureBounty() not implemented')
   }
 
-  public async getLocks (puzzle: BountyContract): Promise<bytes[]> {
+  public async getLocks (puzzle: BountyContract): Promise<bytes[][]> {
     throw new Error('getLocks() not implemented')
   }
 
