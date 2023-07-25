@@ -39,6 +39,18 @@ describe('OrderFindingAccumulator', () => {
     expect(await accumulator.locks(lockNumber, lockParameterNumber)).to.be.eq(expectedValue)
   }
 
+  it('should ensure the base is less than the modulus', async () => {
+    expect.fail('No test implemented')
+  })
+
+  it('should set the first bit of the modulus to 1', async () => {
+    expect.fail('No test implemented')
+  })
+
+  it('should not set the first bit of the base', async () => {
+    expect.fail('No test implemented')
+  })
+
   describe('exact right size input', () => {
     beforeEach(async () => {
       const numberOfLocks = 1
@@ -128,7 +140,9 @@ describe('OrderFindingAccumulator', () => {
       const bytesPerPrime = 1
       accumulator = await deployNewAccumulator(numberOfLocks, bytesPerPrime)
 
-      await accumulator.triggerAccumulate(randomness[0].buffer)
+      for (const rand of ['0xf5', '0x3c']) {
+        await accumulator.triggerAccumulate(Buffer.from(arrayify(rand)))
+      }
     })
 
     describe('first accumulation', () => {
@@ -137,17 +151,24 @@ describe('OrderFindingAccumulator', () => {
       })
 
       it('should have the first lock equal to the input', async () => {
-        await expectLock(0, randomness[0].hexWithPrefix)
+        const expectedValues = ['0xfa', '0x3c']
+        for (let i = 0; i < (await accumulator.parametersPerLock()); i++) {
+          await expectLock(0, i, expectedValues[i])
+        }
       })
 
       it('should have no second lock', async () => {
-        await expectLock(1, '0x')
+        for (let i = 0; i < (await accumulator.parametersPerLock()); i++) {
+          await expectLock(1, i, '0x')
+        }
       })
     })
 
     describe('second accumulation', () => {
       beforeEach(async () => {
-        await accumulator.triggerAccumulate(randomness[1].buffer)
+        for (const rand of ['0x8c', '0x00']) {
+          await accumulator.triggerAccumulate(Buffer.from(arrayify(rand)))
+        }
       })
 
       it('should be marked as done', async () => {
@@ -155,11 +176,17 @@ describe('OrderFindingAccumulator', () => {
       })
 
       it('should have the first lock equal to the first input', async () => {
-        await expectLock(0, randomness[0].hexWithPrefix)
+        const expectedValues = ['0xfa', '0x3c']
+        for (let i = 0; i < (await accumulator.parametersPerLock()); i++) {
+          await expectLock(0, i, expectedValues[i])
+        }
       })
 
       it('should have the second lock equal to the second input', async () => {
-        await expectLock(1, randomness[1].hexWithPrefix)
+        const expectedValues = ['0xc6', '0x00']
+        for (let i = 0; i < (await accumulator.parametersPerLock()); i++) {
+          await expectLock(1, i, expectedValues[i])
+        }
       })
     })
   })

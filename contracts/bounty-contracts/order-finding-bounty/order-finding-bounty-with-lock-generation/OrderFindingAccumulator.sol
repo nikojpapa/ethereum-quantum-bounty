@@ -22,6 +22,8 @@ contract OrderFindingAccumulator is OrderFindingBounty {
   {
     _resetBytes();
     bytesPerLock = bytesPerLockInit;
+
+    for (uint256 i = 0; i < locks.length; i++) locks[i] = new bytes[](parametersPerLock);
   }
 
   function accumulate(bytes memory randomBytes) internal {
@@ -32,8 +34,7 @@ contract OrderFindingAccumulator is OrderFindingBounty {
     currentBytes = BytesLib.concat(currentBytes, bytesToAccumulate);
 
     if (currentBytes.length >= bytesPerLock) {
-      if (locks[currentLockNumber].length == 0) {
-        locks[currentLockNumber] = new bytes[](parametersPerLock);
+      if (locks[currentLockNumber][0].length == 0) {
         locks[currentLockNumber][0] = _ensureFirstBitIsSet(currentBytes);
       } else if (locks[currentLockNumber][0].init(false).gt(currentBytes.init(false))) {
         locks[currentLockNumber][1] = currentBytes;
