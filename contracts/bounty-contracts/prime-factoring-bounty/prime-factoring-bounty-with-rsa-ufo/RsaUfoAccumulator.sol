@@ -18,7 +18,7 @@ contract RsaUfoAccumulator is PrimeFactoringBounty {
     PrimeFactoringBounty(numberOfLocks)
   {
     currentLock = "";
-    bytesPerLock = bytesPerLock;
+    bytesPerLock = bytesPerLockInit;
   }
 
   function accumulate(bytes memory randomBytes) internal {

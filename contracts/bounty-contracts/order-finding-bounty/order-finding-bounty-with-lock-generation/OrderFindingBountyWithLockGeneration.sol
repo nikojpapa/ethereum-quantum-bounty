@@ -5,14 +5,14 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 import "../../BigNumbers.sol";
-import "./RandomOrderFindingAccumulator.sol";
+import "./OrderFindingAccumulator.sol";
 
 
-contract OrderFindingBountyWithRsaUfo is RandomOrderFindingAccumulator {
+contract OrderFindingBountyWithLockGeneration is OrderFindingAccumulator {
   uint256 private iteration;
 
   constructor(uint256 numberOfLocksInit, uint256 byteSizeOfModulus)
-    RandomOrderFindingAccumulator(numberOfLocksInit, byteSizeOfModulus) {}
+    OrderFindingAccumulator(numberOfLocksInit, byteSizeOfModulus) {}
 
   function triggerLockAccumulation() public {
     require(!generationIsDone, 'Locks have already been generated');

@@ -7,10 +7,11 @@ import "../../BigNumbers.sol";
 import "../OrderFindingBounty.sol";
 
 
-contract RandomOrderFindingAccumulator is OrderFindingBounty {
+contract OrderFindingAccumulator is OrderFindingBounty {
   using BigNumbers for *;
 
   bool public generationIsDone;
+  uint8 public parametersPerLock = 2;
 
   bytes private currentBytes;
   uint256 private currentLockNumber;
@@ -19,8 +20,8 @@ contract RandomOrderFindingAccumulator is OrderFindingBounty {
   constructor(uint256 numberOfLocks, uint256 bytesPerLockInit)
     OrderFindingBounty(numberOfLocks)
   {
-    resetBytes();
-    bytesPerLock = bytesPerLock;
+    _resetBytes();
+    bytesPerLock = bytesPerLockInit;
   }
 
   function accumulate(bytes memory randomBytes) internal {
@@ -32,17 +33,24 @@ contract RandomOrderFindingAccumulator is OrderFindingBounty {
 
     if (currentBytes.length >= bytesPerLock) {
       if (locks[currentLockNumber].length == 0) {
-        locks[currentLockNumber][0] = BytesLib.concat(bytes('1'), currentBytes.init(false).shr(1).val);
+        locks[currentLockNumber] = new bytes[](parametersPerLock);
+        locks[currentLockNumber][0] = _ensureFirstBitIsSet(currentBytes).val;
       } else if (locks[currentLockNumber][0].init(false).gt(currentBytes.init(false))) {
         locks[currentLockNumber][1] = currentBytes;
         ++currentLockNumber;
       }
-      resetBytes();
+      _resetBytes();
     }
     if (currentLockNumber >= numberOfLocks) generationIsDone = true;
   }
 
-  function resetBytes() internal virtual {
+  function _ensureFirstBitIsSet(bytes memory value) private returns (BigNumber memory) {
+    BigNumber memory shiftedRight = value.init(false).shr(1);
+    BigNumber memory leftmostOne = BigNumbers.two().pow(shiftedRight.bitlen);
+    return leftmostOne.add(shiftedRight);
+  }
+
+  function _resetBytes() private {
     currentBytes = "";
   }
 }
