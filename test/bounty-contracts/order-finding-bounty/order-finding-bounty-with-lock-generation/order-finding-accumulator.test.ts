@@ -1,27 +1,29 @@
 import { OrderFindingAccumulatorTestHelper, OrderFindingAccumulatorTestHelper__factory } from '../../../../typechain'
 import { ethers } from 'hardhat'
-import { randomBytes } from 'ethers/lib/utils'
+import { arrayify, randomBytes } from 'ethers/lib/utils'
 import { expect } from 'chai'
 import { Buffer } from 'buffer'
 
-const BYTES_OF_LOCK_PER_BYTE_OF_PRIME = 3
-
-class RandomBytes {
-  public buffer: Buffer
-  public hexString: string
-  public hexWithPrefix: string
-
-  constructor () {
-    this.buffer = Buffer.from(randomBytes(BYTES_OF_LOCK_PER_BYTE_OF_PRIME))
-    this.hexString = this.buffer.toString('hex')
-    this.hexWithPrefix = `0x${this.hexString}`
-  }
-}
+// const BYTES_PER_LOCK_PARAMETER = 3
+//
+// class RandomBytes {
+//   public buffer: Buffer
+//   public hexString: string
+//   public hexWithPrefix: string
+//
+//   constructor (hexStringWithPrefix?: string) {
+//     this.buffer = Buffer.from(hexStringWithPrefix ?? randomBytes(BYTES_PER_LOCK_PARAMETER))
+//     this.hexString = this.buffer.toString('hex')
+//     this.hexWithPrefix = `0x${this.hexString}`
+//   }
+// }
 
 describe('OrderFindingAccumulator', () => {
   const ethersSigner = ethers.provider.getSigner()
-  const randomness = new Array(2).fill(0).map(() => new RandomBytes())
-  const randomnessSorted = randomness.sort((a, b) => a.hexString > b.hexString ? 1 : 0)
+  // const randomness = [
+  //   new RandomBytes('0xaed41d'),
+  //   new RandomBytes('0xf58c1f')
+  // ]
 
   let accumulator: OrderFindingAccumulatorTestHelper
 
@@ -43,8 +45,8 @@ describe('OrderFindingAccumulator', () => {
       const bytesPerPrime = 1
       accumulator = await deployNewAccumulator(numberOfLocks, bytesPerPrime)
 
-      for (const rand of randomnessSorted) {
-        await accumulator.triggerAccumulate(rand.buffer)
+      for (const rand of ['0xf5', '0x3c']) {
+        await accumulator.triggerAccumulate(Buffer.from(arrayify(rand)))
       }
     })
 
@@ -53,8 +55,9 @@ describe('OrderFindingAccumulator', () => {
     })
 
     it('should have a lock matching the input', async () => {
+      const expectedValues = ['0xfa', '0x3c']
       for (let i = 0; i < (await accumulator.parametersPerLock()); i++) {
-        await expectLock(0, i, randomnessSorted[i].hexWithPrefix)
+        await expectLock(0, i, expectedValues[i])
       }
     })
   })
@@ -65,15 +68,20 @@ describe('OrderFindingAccumulator', () => {
       const bytesPerPrime = 1
       accumulator = await deployNewAccumulator(numberOfLocks, bytesPerPrime)
 
-      await accumulator.triggerAccumulate(Buffer.concat([randomness[0].buffer, randomness[1].buffer]))
+      for (const rand of ['0xf5d4', '0x3c8c']) {
+        await accumulator.triggerAccumulate(Buffer.from(arrayify(rand)))
+      }
     })
 
     it('should be marked as done', async () => {
       await expectDone(true)
     })
 
-    it('should have a lock with only the necessary bytes', async () => {
-      await expectLock(0, randomness[0].hexWithPrefix)
+    it.only('should have a lock with only the necessary bytes', async () => {
+      const expectedValues = ['0xfa', '0x3c']
+      for (let i = 0; i < (await accumulator.parametersPerLock()); i++) {
+        await expectLock(0, i, expectedValues[i])
+      }
     })
   })
 

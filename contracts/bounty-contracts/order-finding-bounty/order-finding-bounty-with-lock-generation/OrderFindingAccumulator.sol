@@ -34,7 +34,7 @@ contract OrderFindingAccumulator is OrderFindingBounty {
     if (currentBytes.length >= bytesPerLock) {
       if (locks[currentLockNumber].length == 0) {
         locks[currentLockNumber] = new bytes[](parametersPerLock);
-        locks[currentLockNumber][0] = _ensureFirstBitIsSet(currentBytes).val;
+        locks[currentLockNumber][0] = _ensureFirstBitIsSet(currentBytes);
       } else if (locks[currentLockNumber][0].init(false).gt(currentBytes.init(false))) {
         locks[currentLockNumber][1] = currentBytes;
         ++currentLockNumber;
@@ -44,10 +44,11 @@ contract OrderFindingAccumulator is OrderFindingBounty {
     if (currentLockNumber >= numberOfLocks) generationIsDone = true;
   }
 
-  function _ensureFirstBitIsSet(bytes memory value) private returns (BigNumber memory) {
+  function _ensureFirstBitIsSet(bytes memory value) private returns (bytes memory) {
     BigNumber memory shiftedRight = value.init(false).shr(1);
-    BigNumber memory leftmostOne = BigNumbers.two().pow(shiftedRight.bitlen);
-    return leftmostOne.add(shiftedRight);
+    BigNumber memory leftmostOne = BigNumbers.one().shl(shiftedRight.bitlen);
+    BigNumber memory finalValue = leftmostOne.add(shiftedRight);
+    return BytesLib.slice(finalValue.val, finalValue.val.length - value.length, value.length);
   }
 
   function _resetBytes() private {
