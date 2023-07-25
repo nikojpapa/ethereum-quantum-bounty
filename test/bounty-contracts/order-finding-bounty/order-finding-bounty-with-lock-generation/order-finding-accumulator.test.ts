@@ -77,7 +77,7 @@ describe('OrderFindingAccumulator', () => {
       await expectDone(true)
     })
 
-    it.only('should have a lock with only the necessary bytes', async () => {
+    it('should have a lock with only the necessary bytes', async () => {
       const expectedValues = ['0xfa', '0x3c']
       for (let i = 0; i < (await accumulator.parametersPerLock()); i++) {
         await expectLock(0, i, expectedValues[i])
@@ -91,7 +91,9 @@ describe('OrderFindingAccumulator', () => {
       const bytesPerPrime = 2
       accumulator = await deployNewAccumulator(numberOfLocks, bytesPerPrime)
 
-      await accumulator.triggerAccumulate(randomness[0].buffer)
+      for (const rand of ['0xf5', '0x3c', '0x8c']) {
+        await accumulator.triggerAccumulate(Buffer.from(arrayify(rand)))
+      }
     })
 
     describe('first accumulation', () => {
@@ -99,14 +101,14 @@ describe('OrderFindingAccumulator', () => {
         await expectDone(false)
       })
 
-      it('should have no locks', async () => {
-        await expectLock(0, '0x')
+      it('should have only the first parameter of the first lock', async () => {
+        await expectLock(0, 0, '0xfa9e')
       })
     })
 
     describe('second accumulation', () => {
       beforeEach(async () => {
-        await accumulator.triggerAccumulate(randomness[1].buffer)
+        await accumulator.triggerAccumulate(Buffer.from(arrayify('0x00')))
       })
 
       it('should be marked as done', async () => {
@@ -114,7 +116,8 @@ describe('OrderFindingAccumulator', () => {
       })
 
       it('should have a lock equal to both inputs', async () => {
-        await expectLock(0, `0x${randomness[0].hexString}${randomness[1].hexString}`)
+        await expectLock(0, 0, '0xfa9e')
+        await expectLock(0, 1, '0x8c00')
       })
     })
   })
