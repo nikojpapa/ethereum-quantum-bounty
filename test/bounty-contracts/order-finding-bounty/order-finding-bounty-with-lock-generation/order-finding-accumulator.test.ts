@@ -33,24 +33,65 @@ describe('OrderFindingAccumulator', () => {
     }
   }
 
-  it('should ensure the base is less than the modulus', async () => {
-    expect.fail('No test implemented')
-  })
+  describe('modulus and base', function () {
+    describe('single accumulations', () => {
+      beforeEach(async () => {
+        const numberOfLocks = 1
+        const bytesPerPrime = 1
+        accumulator = await deployNewAccumulator(numberOfLocks, bytesPerPrime)
+      })
 
-  it('should ensure the base is greater than 1', async () => {
-    expect.fail('No test implemented')
-  })
+      describe('ensure the base is between 1 and -1', () => {
+        beforeEach(async () => {
+          await accumulateValues(['0x81'])
+          await expectLockParameter(0, 0, '0x81')
+        })
 
-  it('should set the first bit of the modulus to 1', async () => {
-    expect.fail('No test implemented')
-  })
+        it('should ensure the base is coprime with the modulus', () => {
+          expect.fail('Test not implemented')
+        })
 
-  it('should not set the first bit of the base', async () => {
-    expect.fail('No test implemented')
-  })
+        it('should modulo the base if it is greater than the modulus', async () => {
+          await accumulateValues(['0x83'])
+          await expectLockParameter(0, 1, '0x02')
+        })
 
-  it('should not set the first bit of subsequent accumulations of the modulus', async () => {
-    expect.fail('No test implemented')
+        it('should not accept a base equal to -1', async () => {
+          await accumulateValues(['0x80'])
+          await expectLockParameter(0, 1, '0x')
+        })
+
+        it('should not accept a base equal to 1', async () => {
+          await accumulateValues(['0x01'])
+          await expectLockParameter(0, 1, '0x')
+        })
+      })
+
+      describe('setting the first bit of the modulus', () => {
+        it('should leave it unchanged if already one', async () => {
+          await accumulateValues(['0x81'])
+          await expectLockParameter(0, 0, '0x81')
+        })
+
+        it('should set it to one if zero', async () => {
+          await accumulateValues(['0x03'])
+          await expectLockParameter(0, 0, '0x83')
+        })
+      })
+
+      it('should not set the first bit of the base', async () => {
+        await accumulateValues(['0x81', '0x03'])
+        await expectLockParameter(0, 1, '0x03')
+      })
+    })
+
+    it('should not set the first bit of subsequent accumulations of the modulus', async () => {
+      const numberOfLocks = 1
+      const bytesPerPrime = 2
+      accumulator = await deployNewAccumulator(numberOfLocks, bytesPerPrime)
+      await accumulateValues(['0x81', '0x03'])
+      await expectLockParameter(0, 0, '0x8103')
+    })
   })
 
   describe('exact right size input', () => {
@@ -66,7 +107,7 @@ describe('OrderFindingAccumulator', () => {
     })
 
     it('should have a lock matching the input', async () => {
-      await expectLock(0, ['0xfa', '0x3c'])
+      await expectLock(0, ['0xf5', '0x3c'])
     })
   })
 
@@ -83,7 +124,7 @@ describe('OrderFindingAccumulator', () => {
     })
 
     it('should have a lock with only the necessary bytes', async () => {
-      await expectLock(0, ['0xfa', '0x3c'])
+      await expectLock(0, ['0xf5', '0x3c'])
     })
   })
 
@@ -101,7 +142,7 @@ describe('OrderFindingAccumulator', () => {
       })
 
       it('should have only the first parameter of the first lock', async () => {
-        await expectLockParameter(0, 0, '0xfa9e')
+        await expectLockParameter(0, 0, '0xf53c')
         await expectLockParameter(0, 1, '0x')
       })
     })
@@ -116,7 +157,7 @@ describe('OrderFindingAccumulator', () => {
       })
 
       it('should have a lock equal to both inputs', async () => {
-        await expectLockParameter(0, 0, '0xfa9e')
+        await expectLockParameter(0, 0, '0xf53c')
         await expectLockParameter(0, 1, '0x8c00')
       })
     })
@@ -136,7 +177,7 @@ describe('OrderFindingAccumulator', () => {
       })
 
       it('should have the first lock equal to the input', async () => {
-        await expectLock(0, ['0xfa', '0x3c'])
+        await expectLock(0, ['0xf5', '0x3c'])
       })
 
       it('should have no second lock', async () => {
@@ -146,7 +187,7 @@ describe('OrderFindingAccumulator', () => {
 
     describe('second accumulation', () => {
       beforeEach(async () => {
-        await accumulateValues(['0x8c', '0x00'])
+        await accumulateValues(['0x8c', '0x02'])
       })
 
       it('should be marked as done', async () => {
@@ -154,11 +195,11 @@ describe('OrderFindingAccumulator', () => {
       })
 
       it('should have the first lock equal to the first input', async () => {
-        await expectLock(0, ['0xfa', '0x3c'])
+        await expectLock(0, ['0xf5', '0x3c'])
       })
 
       it('should have the second lock equal to the second input', async () => {
-        await expectLock(1, ['0xc6', '0x00'])
+        await expectLock(1, ['0x8c', '0x02'])
       })
     })
   })
@@ -177,7 +218,7 @@ describe('OrderFindingAccumulator', () => {
       })
 
       it('should have the first lock equal to the input', async () => {
-        await expectLock(0, ['0xfa', '0x3c'])
+        await expectLock(0, ['0xf5', '0x3c'])
       })
     })
 
@@ -191,7 +232,7 @@ describe('OrderFindingAccumulator', () => {
       })
 
       it('should have the first lock equal to the first input', async () => {
-        await expectLock(0, ['0xfa', '0x3c'])
+        await expectLock(0, ['0xf5', '0x3c'])
       })
     })
   })
