@@ -42,7 +42,9 @@ contract OrderFindingAccumulator is OrderFindingBounty {
         BigNumber memory modulus = locks[currentLockNumber][0].init(false);
         BigNumber memory base = currentBytes.init(false).mod(modulus);
         BigNumber memory negativeOne = BigNumbers.zero().sub(BigNumbers.one()).mod(modulus);
-        if (!(base.eq(BigNumbers.one()) || base.eq(negativeOne))) {
+
+        bool hasTrivialOrder = base.eq(BigNumbers.one()) || base.eq(negativeOne);
+        if (!hasTrivialOrder && _isCoprime(base, modulus)) {
           locks[currentLockNumber][1] = _slicePrefix(base.val);
           ++currentLockNumber;
         }
@@ -60,6 +62,20 @@ contract OrderFindingAccumulator is OrderFindingBounty {
     BigNumber memory bitwiseOrValue = notFirstBit.shl(amountToShift);
     BigNumber memory finalValue = value.init(false).add(bitwiseOrValue);
     return _slicePrefix(finalValue.val);
+  }
+
+  /* Adapted rom https://gist.github.com/3esmit/8c0a63f17f2f2448cc1576eb27fe5910
+   */
+  function _isCoprime(BigNumber memory a, BigNumber memory b) public returns (bool) {
+    BigNumber memory _a = a;
+    BigNumber memory _b = b;
+    BigNumber memory temp;
+    while (_b.gt(BigNumbers.zero())) {
+      temp = _b;
+      _b = _a.mod(_b);
+      _a = temp;
+    }
+    return _a.eq(BigNumbers.one());
   }
 
   function _slicePrefix(bytes memory value) private returns (bytes memory) {
