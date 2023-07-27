@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.12;
 
-import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
-import "solidity-bytes-utils/contracts/BytesLib.sol";
-
 import "../BountyContract.sol";
 import "../BigNumbers.sol";
 

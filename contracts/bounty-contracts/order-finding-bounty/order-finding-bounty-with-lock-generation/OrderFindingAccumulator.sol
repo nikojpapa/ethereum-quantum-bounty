@@ -2,8 +2,6 @@
 pragma solidity ^0.8.12;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
-
-import "../../BigNumbers.sol";
 import "../OrderFindingBounty.sol";
 
 
@@ -24,8 +22,6 @@ contract OrderFindingAccumulator is OrderFindingBounty {
   {
     _resetBytes();
     bytesPerLock = bytesPerLockInit;
-
-    for (uint256 i = 0; i < locks.length; i++) locks[i] = new bytes[](parametersPerLock);
   }
 
   function accumulate(bytes memory randomBytes) internal {
@@ -36,6 +32,8 @@ contract OrderFindingAccumulator is OrderFindingBounty {
     currentBytes = BytesLib.concat(currentBytes, bytesToAccumulate);
 
     if (currentBytes.length >= bytesPerLock) {
+      if (locks[currentLockNumber].length == 0) locks[currentLockNumber] = new bytes[](parametersPerLock);
+
       if (locks[currentLockNumber][0].length == 0) {
         locks[currentLockNumber][0] = _ensureFirstBitIsSet(currentBytes);
       } else {
@@ -66,7 +64,7 @@ contract OrderFindingAccumulator is OrderFindingBounty {
 
   /* Adapted rom https://gist.github.com/3esmit/8c0a63f17f2f2448cc1576eb27fe5910
    */
-  function _isCoprime(BigNumber memory a, BigNumber memory b) public returns (bool) {
+  function _isCoprime(BigNumber memory a, BigNumber memory b) private view returns (bool) {
     BigNumber memory _a = a;
     BigNumber memory _b = b;
     BigNumber memory temp;
@@ -78,7 +76,7 @@ contract OrderFindingAccumulator is OrderFindingBounty {
     return _a.eq(BigNumbers.one());
   }
 
-  function _slicePrefix(bytes memory value) private returns (bytes memory) {
+  function _slicePrefix(bytes memory value) private view returns (bytes memory) {
     return BytesLib.slice(value, value.length - bytesPerLock, bytesPerLock);
   }
 
