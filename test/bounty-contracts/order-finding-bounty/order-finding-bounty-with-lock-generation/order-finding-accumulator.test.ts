@@ -182,7 +182,7 @@ describe('OrderFindingAccumulator', () => {
       })
 
       it('should have no second lock', async () => {
-        await expectLock(1, ['0x', '0x'])
+        await expect(accumulator.locks(1, 0)).to.be.reverted
       })
     })
 

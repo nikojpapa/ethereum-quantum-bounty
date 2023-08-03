@@ -53,13 +53,9 @@ contract OrderFindingAccumulator is OrderFindingBounty {
   }
 
   function _ensureFirstBitIsSet(bytes memory value) private returns (bytes memory) {
-    BigNumber memory asBigNumber = value.init(false);
-    uint256 amountToShift = value.length * _BITS_PER_BYTE - 1;
-    BigNumber memory firstBit = asBigNumber.shr(amountToShift);
-    BigNumber memory notFirstBit = BigNumbers.one().sub(firstBit);
-    BigNumber memory bitwiseOrValue = notFirstBit.shl(amountToShift);
-    BigNumber memory finalValue = value.init(false).add(bitwiseOrValue);
-    return _slicePrefix(finalValue.val);
+    uint8 firstByte = BytesLib.toUint8(value, 0);
+    value[0] = bytes1(abi.encodePacked(firstByte | (1 << 7)));
+    return _slicePrefix(value);
   }
 
   /* Adapted rom https://gist.github.com/3esmit/8c0a63f17f2f2448cc1576eb27fe5910
