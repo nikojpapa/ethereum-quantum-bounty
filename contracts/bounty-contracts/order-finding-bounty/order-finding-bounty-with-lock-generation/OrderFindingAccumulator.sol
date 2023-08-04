@@ -35,11 +35,12 @@ contract OrderFindingAccumulator is OrderFindingBounty {
       if (locks[currentLockNumber].length == 0) locks[currentLockNumber] = new bytes[](parametersPerLock);
 
       if (locks[currentLockNumber][0].length == 0) {
-        locks[currentLockNumber][0] = _ensureFirstBitIsSet(currentBytes);
+        _setFirstBit(currentBytes);
+        locks[currentLockNumber][0] = currentBytes;
       } else {
         BigNumber memory modulus = locks[currentLockNumber][0].init(false);
         BigNumber memory base = currentBytes.init(false).mod(modulus);
-        BigNumber memory negativeOne = BigNumbers.zero().sub(BigNumbers.one()).mod(modulus);
+        BigNumber memory negativeOne = modulus.sub(BigNumbers.one());
 
         bool hasTrivialOrder = base.eq(BigNumbers.one()) || base.eq(negativeOne);
         if (!hasTrivialOrder && _isCoprime(base, modulus)) {
@@ -52,10 +53,8 @@ contract OrderFindingAccumulator is OrderFindingBounty {
     if (currentLockNumber >= numberOfLocks) generationIsDone = true;
   }
 
-  function _ensureFirstBitIsSet(bytes memory value) private returns (bytes memory) {
-    uint8 firstByte = BytesLib.toUint8(value, 0);
-    value[0] = bytes1(abi.encodePacked(firstByte | (1 << 7)));
-    return _slicePrefix(value);
+  function _setFirstBit(bytes storage value) private {
+    value[0] |= bytes1(uint8(1 << 7));
   }
 
   /* Adapted rom https://gist.github.com/3esmit/8c0a63f17f2f2448cc1576eb27fe5910
