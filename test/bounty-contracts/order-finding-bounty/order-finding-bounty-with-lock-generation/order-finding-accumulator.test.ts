@@ -47,9 +47,11 @@ describe('OrderFindingAccumulator', () => {
           await expectLockParameter(0, 0, '0x81')
         })
 
-        it('should not accept a base that is not coprime with the modulus', async () => {
+        it.only('should only accept a base that is coprime with the modulus', async () => {
           await accumulateValues(['0x06'])
           await expectLockParameter(0, 1, '0x')
+          await accumulateValues(['0x02'])
+          await expectLockParameter(0, 1, '0x02')
         })
 
         it('should modulo the base if it is greater than the modulus', async () => {
