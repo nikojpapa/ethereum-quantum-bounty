@@ -3,6 +3,9 @@ import {
 } from '../../../../typechain'
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
+import { BigNumber } from 'ethers'
+
+const MAX_GAS_LIMIT_OPTION = { gasLimit: BigNumber.from('0x1c9c380') }
 
 describe('OrderFindingBountyWithLockGeneration', () => {
   const ethersSigner = ethers.provider.getSigner()
@@ -10,7 +13,7 @@ describe('OrderFindingBountyWithLockGeneration', () => {
   async function deployNewAccumulator (numberOfLocks: number, byteSizeOfModulus: number): Promise<OrderFindingBountyWithLockGeneration> {
     const bounty = await new OrderFindingBountyWithLockGeneration__factory(ethersSigner).deploy(numberOfLocks, byteSizeOfModulus)
     while (!(await bounty.generationIsDone())) {
-      await bounty.triggerLockAccumulation()
+      await bounty.triggerLockAccumulation(MAX_GAS_LIMIT_OPTION)
     }
     return bounty
   }

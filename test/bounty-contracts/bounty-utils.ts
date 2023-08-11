@@ -19,7 +19,7 @@ export class SolveAttemptResult {
 }
 
 export async function solveBountyReturningUserBalanceBeforeFinalSolution (
-    solutions: bytes[][],
+    solutions: bytes[],
     bounty: BountyContract,
     getUserBalance?: () => Promise<BigNumber>): Promise<SolveAttemptResult> {
   let userBalanceBeforeFinalTransaction = BigNumber.from(0)
@@ -30,12 +30,12 @@ export async function solveBountyReturningUserBalanceBeforeFinalSolution (
   return new SolveAttemptResult(userBalanceBeforeFinalTransaction)
 }
 
-export async function submitSolution (lockNumber: number, solution: bytes[], bounty: BountyContract): Promise<ContractTransaction> {
+export async function submitSolution (lockNumber: number, solution: bytes, bounty: BountyContract): Promise<ContractTransaction> {
   const arbitraryUser = ethers.provider.getSigner(1)
   const solutionEncoding = web3.eth.abi.encodeParameters(
     [
       'address',
-      'bytes[]'
+      'bytes'
     ], [
       await arbitraryUser.getAddress(),
       solution

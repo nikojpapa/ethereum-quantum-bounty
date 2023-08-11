@@ -63,7 +63,7 @@ function getBountyTest (bountyUtils: BountyUtils) {
         })
 
         it('should not allow further solve attempts if already solved', async () => {
-          const tx = submitSolution(0, [Buffer.from('')], bounty)
+          const tx = submitSolution(0, Buffer.from(''), bounty)
           await expect(tx).to.be.revertedWith('Already solved')
         })
       })
@@ -170,13 +170,13 @@ function getBountyTest (bountyUtils: BountyUtils) {
       })
 
       it('should not allow a reveal without a commit', async () => {
-        const arbitrarySolution: bytes[] = []
+        const arbitrarySolution: bytes = '0x'
         const tx = bounty.solve(arbitraryLockNumber, arbitrarySolution)
         await expect(tx).to.be.revertedWith('Not committed yet')
       })
 
       it('should not allow a reveal within a day of the commit', async () => {
-        const arbitrarySolutions: bytes[] = []
+        const arbitrarySolutions: bytes = '0x'
         await bounty.commitSolution(arbitraryLockNumber, arbitrarySolutionHashBuffer)
 
         const justBeforeADay = bountyUtils.ONE_DAY_IN_SECONDS - ONE_MINUTE_IN_SECONDS

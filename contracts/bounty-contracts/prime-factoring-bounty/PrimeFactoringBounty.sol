@@ -13,10 +13,11 @@ abstract contract PrimeFactoringBounty is BountyContract {
 
   constructor(uint256 numberOfLocks) BountyContract(numberOfLocks) {}
 
-  function _verifySolution(uint256 lockNumber, bytes[] memory solution) internal view override returns (bool) {
+  function _verifySolution(uint256 lockNumber, bytes memory solution) internal view override returns (bool) {
+    bytes[] memory primes = abi.decode(solution, (bytes[]));
     BigNumber memory product = BigNumbers.one();
-    for (uint256 i = 0; i < solution.length; i++) {
-      bytes memory primeFactor = solution[i];
+    for (uint256 i = 0; i < primes.length; i++) {
+      bytes memory primeFactor = primes[i];
       require(MillerRabin.isPrime(primeFactor), 'Given solution is not prime');
       product = product.mul(primeFactor.init(false));
     }

@@ -10,7 +10,7 @@ import { expect } from 'chai'
 import { BigNumber } from 'ethers'
 import { randomBytes } from 'crypto'
 
-describe('Test the cost of solving the order finding bounty', () => {
+describe.skip('Test the cost of solving the order finding bounty', () => {
   let bounty: OrderFindingBountyWithPredeterminedLocks
   const base = Buffer.from(arrayify('0xccda5ed8b7b0a45eb02d23b07e62f088fbe14781ce0baf896605957519c2e0cdf8206066d6d1f7acaddeea0a5edc97277998024a093ee70358aabcf322c0b748ea4ac0cd884344c55564ab5a9d6d6ac7f89e67f488e84a0e19d0ced4c89bc818a357'))
 

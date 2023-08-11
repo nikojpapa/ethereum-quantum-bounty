@@ -1,27 +1,12 @@
 import { RsaUfoAccumulatorTestHelper, RsaUfoAccumulatorTestHelper__factory } from '../../../../typechain'
 import { ethers } from 'hardhat'
-import { randomBytes } from 'ethers/lib/utils'
+import { arrayify } from 'ethers/lib/utils'
 import { expect } from 'chai'
 import { Buffer } from 'buffer'
-
-const BYTES_OF_LOCK_PER_BYTE_OF_PRIME = 3
-
-class RandomBytes {
-  public buffer: Buffer
-  public hexString: string
-  public hexWithPrefix: string
-
-  constructor () {
-    this.buffer = Buffer.from(randomBytes(BYTES_OF_LOCK_PER_BYTE_OF_PRIME))
-    this.hexString = this.buffer.toString('hex')
-    this.hexWithPrefix = `0x${this.hexString}`
-  }
-}
+import exp from 'constants'
 
 describe('RsaUfoAccumulator', () => {
   const ethersSigner = ethers.provider.getSigner()
-  const randomness = new Array(2).fill(0).map(() => new RandomBytes())
-
   let rsaUfoAccumulator: RsaUfoAccumulatorTestHelper
 
   async function deployNewRsaUfoAccumulator (numberOfLocks: number, bytesPerPrime: number): Promise<RsaUfoAccumulatorTestHelper> {
@@ -33,7 +18,7 @@ describe('RsaUfoAccumulator', () => {
   }
 
   async function expectLock (lockNumber: number, expectedValue: string): Promise<void> {
-    expect(await rsaUfoAccumulator.locks(lockNumber)).to.be.eq(expectedValue)
+    expect(await rsaUfoAccumulator.locks(lockNumber, 0)).to.be.eq(expectedValue)
   }
 
   describe('exact right size input', () => {
@@ -42,7 +27,7 @@ describe('RsaUfoAccumulator', () => {
       const bytesPerPrime = 1
       rsaUfoAccumulator = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
 
-      await rsaUfoAccumulator.triggerAccumulate(randomness[0].buffer)
+      await rsaUfoAccumulator.triggerAccumulate('0x02')
     })
 
     it('should be marked as done', async () => {
@@ -50,7 +35,7 @@ describe('RsaUfoAccumulator', () => {
     })
 
     it('should have a lock matching the input', async () => {
-      await expectLock(0, randomness[0].hexWithPrefix)
+      await expectLock(0, '0x02')
     })
   })
 
@@ -60,7 +45,7 @@ describe('RsaUfoAccumulator', () => {
       const bytesPerPrime = 1
       rsaUfoAccumulator = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
 
-      await rsaUfoAccumulator.triggerAccumulate(Buffer.concat([randomness[0].buffer, randomness[1].buffer]))
+      await rsaUfoAccumulator.triggerAccumulate(Buffer.concat([Buffer.from(arrayify('0x02')), Buffer.from(arrayify('0xa6'))]))
     })
 
     it('should be marked as done', async () => {
@@ -68,7 +53,7 @@ describe('RsaUfoAccumulator', () => {
     })
 
     it('should have a lock with only the necessary bytes', async () => {
-      await expectLock(0, randomness[0].hexWithPrefix)
+      await expectLock(0, '0x02')
     })
   })
 
@@ -78,7 +63,7 @@ describe('RsaUfoAccumulator', () => {
       const bytesPerPrime = 2
       rsaUfoAccumulator = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
 
-      await rsaUfoAccumulator.triggerAccumulate(randomness[0].buffer)
+      await rsaUfoAccumulator.triggerAccumulate('0x02')
     })
 
     describe('first accumulation', () => {
@@ -87,13 +72,14 @@ describe('RsaUfoAccumulator', () => {
       })
 
       it('should have no locks', async () => {
-        await expectLock(0, '0x')
+        const tx = rsaUfoAccumulator.locks(0, 0)
+        await expect(tx).to.be.reverted
       })
     })
 
     describe('second accumulation', () => {
       beforeEach(async () => {
-        await rsaUfoAccumulator.triggerAccumulate(randomness[1].buffer)
+        await rsaUfoAccumulator.triggerAccumulate('0xa6')
       })
 
       it('should be marked as done', async () => {
@@ -101,7 +87,7 @@ describe('RsaUfoAccumulator', () => {
       })
 
       it('should have a lock equal to both inputs', async () => {
-        await expectLock(0, `0x${randomness[0].hexString}${randomness[1].hexString}`)
+        await expectLock(0, '0x02a6')
       })
     })
   })
@@ -112,7 +98,7 @@ describe('RsaUfoAccumulator', () => {
       const bytesPerPrime = 1
       rsaUfoAccumulator = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
 
-      await rsaUfoAccumulator.triggerAccumulate(randomness[0].buffer)
+      await rsaUfoAccumulator.triggerAccumulate('0x02')
     })
 
     describe('first accumulation', () => {
@@ -121,17 +107,18 @@ describe('RsaUfoAccumulator', () => {
       })
 
       it('should have the first lock equal to the input', async () => {
-        await expectLock(0, randomness[0].hexWithPrefix)
+        await expectLock(0, '0x02')
       })
 
       it('should have no second lock', async () => {
-        await expectLock(1, '0x')
+        const tx = rsaUfoAccumulator.locks(1, 0)
+        await expect(tx).to.be.reverted
       })
     })
 
     describe('second accumulation', () => {
       beforeEach(async () => {
-        await rsaUfoAccumulator.triggerAccumulate(randomness[1].buffer)
+        await rsaUfoAccumulator.triggerAccumulate('0xa6')
       })
 
       it('should be marked as done', async () => {
@@ -139,11 +126,11 @@ describe('RsaUfoAccumulator', () => {
       })
 
       it('should have the first lock equal to the first input', async () => {
-        await expectLock(0, randomness[0].hexWithPrefix)
+        await expectLock(0, '0x02')
       })
 
       it('should have the second lock equal to the second input', async () => {
-        await expectLock(1, randomness[1].hexWithPrefix)
+        await expectLock(1, '0xa6')
       })
     })
   })
@@ -154,7 +141,7 @@ describe('RsaUfoAccumulator', () => {
       const bytesPerPrime = 1
       rsaUfoAccumulator = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
 
-      await rsaUfoAccumulator.triggerAccumulate(randomness[0].buffer)
+      await rsaUfoAccumulator.triggerAccumulate('0x02')
     })
 
     describe('first accumulation', () => {
@@ -163,17 +150,21 @@ describe('RsaUfoAccumulator', () => {
       })
 
       it('should have the first lock equal to the input', async () => {
-        await expectLock(0, randomness[0].hexWithPrefix)
+        await expectLock(0, '0x02')
       })
     })
 
     describe('unnecessary, additional accumulation', () => {
+      beforeEach(async () => {
+        await rsaUfoAccumulator.triggerAccumulate('0xa6')
+      })
+
       it('should be marked as done', async () => {
         await expectDone(true)
       })
 
       it('should have the first lock equal to the first input', async () => {
-        await expectLock(0, randomness[0].hexWithPrefix)
+        await expectLock(0, '0x02')
       })
     })
   })

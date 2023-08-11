@@ -19,11 +19,11 @@ class OrderFindingBountyWithPredeterminedLocksUtils extends BountyUtils {
   private readonly locksAndKeys = [
     {
       lock: [15, 7],
-      keys: [4]
+      key: 4
     },
     {
       lock: [23, 17],
-      keys: [22]
+      key: 22
     }
   ]
 
@@ -51,15 +51,12 @@ class OrderFindingBountyWithPredeterminedLocksUtils extends BountyUtils {
   }
 
   public async solveBountyIncorrectly (bounty: BountyContract): Promise<ContractTransaction> {
-    const primes = this._getKeys()
-    return await submitSolution(1, primes[0], bounty)
+    const keys = this._getKeys()
+    return await submitSolution(1, keys[0], bounty)
   }
 
-  private _getKeys (): bytes[][] {
-    const keys = this.locksAndKeys.map(lockAndKeys => lockAndKeys.keys)
-    return keys.map(keysForLock =>
-      keysForLock.map(key =>
-        Buffer.from(arrayify(key))))
+  private _getKeys (): bytes[] {
+    return this.locksAndKeys.map(lockAndKeys => Buffer.from(arrayify(lockAndKeys.key)))
   }
 
   public async getLatestSolvedGasCost (): Promise<BigNumber> {

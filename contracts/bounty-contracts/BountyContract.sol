@@ -44,7 +44,7 @@ abstract contract BountyContract {
     return (commit.solutionHash, commit.timestamp);
   }
 
-  function solve(uint256 lockNumber, bytes[] memory solution) public requireUnsolved {
+  function solve(uint256 lockNumber, bytes memory solution) public requireUnsolved {
     require(_verifyReveal(lockNumber, solution), "Solution hash doesn't match");
     require(_verifySolution(lockNumber, solution), 'Invalid solution');
 
@@ -55,7 +55,7 @@ abstract contract BountyContract {
     }
   }
 
-  function _verifyReveal(uint256 lockNumber, bytes[] memory solution) private view returns (bool) {
+  function _verifyReveal(uint256 lockNumber, bytes memory solution) private view returns (bool) {
     Commit storage commit = commits[msg.sender][lockNumber];
     _requireCommitExists(commit);
     require(block.timestamp - commit.timestamp >= ONE_DAY_IN_SECONDS, 'Cannot reveal within a day of the commit');
@@ -69,7 +69,7 @@ abstract contract BountyContract {
     require(!BytesLib.equal(commit.solutionHash, ""), 'Not committed yet');
   }
 
-  function _verifySolution(uint256 lockNumber, bytes[] memory solution) internal view virtual returns (bool);
+  function _verifySolution(uint256 lockNumber, bytes memory solution) internal view virtual returns (bool);
 
   function _allLocksSolved() private view returns (bool) {
     bool allSolved = true;
