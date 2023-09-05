@@ -12,7 +12,7 @@ import {
   PrimeFactoringBountyWithPredeterminedLocks,
   PrimeFactoringBountyWithPredeterminedLocks__factory
 } from '../../../../typechain'
-import { arrayify } from 'ethers/lib/utils'
+import { arrayify, defaultAbiCoder } from 'ethers/lib/utils'
 import { Buffer } from 'buffer'
 
 class PrimeFactoringBountyWithPredeterminedLocksUtils extends BountyUtils {
@@ -43,22 +43,29 @@ class PrimeFactoringBountyWithPredeterminedLocksUtils extends BountyUtils {
     return bounty
   }
 
-  public async getLocks (): Promise<bytes[]> {
-    return Promise.resolve(this.locksAndKeys.map(x => Buffer.from(arrayify(x.lock))))
+  public async getLocks (): Promise<bytes[][]> {
+    return Promise.resolve(this.locksAndKeys.map(x => [Buffer.from(arrayify(x.lock))]))
   }
 
   public async solveBounty (bounty: BountyContract, getUserBalance?: () => Promise<BigNumber>): Promise<SolveAttemptResult> {
-    return solveBountyReturningUserBalanceBeforeFinalSolution(this._getPrimes(), bounty, getUserBalance)
+    const solutions = this._getPrimes().map(primes => this.encodeByteArray(primes))
+    return solveBountyReturningUserBalanceBeforeFinalSolution(solutions, bounty, getUserBalance)
   }
 
   public async solveBountyPartially (bounty: BountyContract): Promise<void> {
     const primes = this._getPrimes()
-    await submitSolution(0, primes[0], bounty)
+    const solution = this.encodeByteArray(primes[0])
+    await submitSolution(0, solution, bounty)
   }
 
   public async solveBountyIncorrectly (bounty: BountyContract): Promise<ContractTransaction> {
     const primes = this._getPrimes()
-    return await submitSolution(1, primes[0], bounty)
+    const solution = this.encodeByteArray(primes[0])
+    return await submitSolution(1, solution, bounty)
+  }
+
+  private encodeByteArray (value: bytes[]): bytes {
+    return defaultAbiCoder.encode(['bytes[]'], [value])
   }
 
   private _getPrimes (): bytes[][] {

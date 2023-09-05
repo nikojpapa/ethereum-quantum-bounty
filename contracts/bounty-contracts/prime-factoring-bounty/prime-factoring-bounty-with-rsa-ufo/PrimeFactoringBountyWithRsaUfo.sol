@@ -4,7 +4,7 @@ pragma solidity ^0.8.12;
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
-import "../BigNumbers.sol";
+import "../../BigNumbers.sol";
 import "../PrimeFactoringBounty.sol";
 import "./RsaUfoAccumulator.sol";
 
@@ -20,7 +20,7 @@ contract PrimeFactoringBountyWithRsaUfo is RsaUfoAccumulator {
   uint256 private iteration;
 
   constructor(uint256 numberOfLocksInit, uint256 bytesPerPrimeInit)
-    RsaUfoAccumulator(numberOfLocksInit, bytesPerPrimeInit) {}
+    RsaUfoAccumulator(numberOfLocksInit, 3 * bytesPerPrimeInit) {}
 
   function triggerLockAccumulation() public {
     require(!generationIsDone, 'Locks have already been generated');

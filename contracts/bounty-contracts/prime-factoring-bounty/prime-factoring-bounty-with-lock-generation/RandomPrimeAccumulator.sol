@@ -3,10 +3,10 @@ pragma solidity ^0.8.12;
 
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
-import "../BigNumbers.sol";
+import "../../BigNumbers.sol";
 import "../miller-rabin/MillerRabin.sol";
 
-contract RandomNumberAccumulator {
+contract RandomPrimeAccumulator {
   using BigNumbers for *;
 
   bytes[] public locks;

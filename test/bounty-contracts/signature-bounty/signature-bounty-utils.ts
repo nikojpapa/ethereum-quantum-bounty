@@ -9,12 +9,12 @@ import BountyUtils, {
   solveBountyReturningUserBalanceBeforeFinalSolution,
   submitSolution
 } from '../bounty-utils'
-import { arrayify } from 'ethers/lib/utils'
+import { arrayify, defaultAbiCoder } from 'ethers/lib/utils'
 import { Buffer } from 'buffer'
 
 class SignatureBountyUtils extends BountyUtils {
   private readonly numberOfLocks: number
-  private readonly _publicKeys: bytes[]
+  private readonly _publicKeys: bytes[][]
   private _signatures: string[]
   private readonly _signers: JsonRpcSigner[]
 
@@ -31,27 +31,36 @@ class SignatureBountyUtils extends BountyUtils {
     return await new SignatureBounty__factory(ethersSigner).deploy(await this.getLocks())
   }
 
-  public async getLocks (): Promise<bytes[]> {
+  public async getLocks (): Promise<bytes[][]> {
     if (this._publicKeys.length === 0) {
       for (const signer of this.signers) {
-        this._publicKeys.push(Buffer.from(arrayify(await signer.getAddress())))
+        this._publicKeys.push([Buffer.from(arrayify(await signer.getAddress()))])
       }
     }
     return this._publicKeys
   }
 
   public async solveBounty (bounty: SignatureBounty, getUserBalance: () => Promise<BigNumber>): Promise<SolveAttemptResult> {
-    return solveBountyReturningUserBalanceBeforeFinalSolution(await this.getSignaturesWithMessages(), bounty, getUserBalance)
+    const signaturesWithMessages = await this.getSignaturesWithMessages()
+    const solutions = signaturesWithMessages
+      .map(solution => this.encodeByteArray(solution))
+    return solveBountyReturningUserBalanceBeforeFinalSolution(solutions, bounty, getUserBalance)
   }
 
   public async solveBountyPartially (bounty: SignatureBounty): Promise<void> {
     const signaturesWithMessages = await this.getSignaturesWithMessages()
-    await submitSolution(0, signaturesWithMessages[0], bounty)
+    const solution = this.encodeByteArray(signaturesWithMessages[0])
+    await submitSolution(0, solution, bounty)
   }
 
   public async solveBountyIncorrectly (bounty: SignatureBounty): Promise<ContractTransaction> {
     const signaturesWithMessages = await this.getSignaturesWithMessages()
-    return submitSolution(1, signaturesWithMessages[0], bounty)
+    const solution = this.encodeByteArray(signaturesWithMessages[0])
+    return submitSolution(1, solution, bounty)
+  }
+
+  private encodeByteArray (value: bytes[]): bytes {
+    return defaultAbiCoder.encode(['bytes[]'], [value])
   }
 
   private async getSignaturesWithMessages (): Promise<string[][]> {

@@ -9,7 +9,7 @@ import "../BountyContract.sol";
 contract SignatureBounty is BountyContract {
     using ECDSA for bytes32;
 
-    constructor(bytes[] memory publicKeys)
+    constructor(bytes[][] memory publicKeys)
       BountyContract(publicKeys.length)
     {
       for (uint256 lockNumber = 0; lockNumber < publicKeys.length; lockNumber++) {
@@ -17,10 +17,11 @@ contract SignatureBounty is BountyContract {
       }
     }
 
-    function _verifySolution(uint256 lockNumber, bytes[] memory solution) internal view override returns (bool) {
-      address lock = BytesLib.toAddress(getLockValue(lockNumber), 0);
-      bytes32 message = BytesLib.toBytes32(solution[0], 0);
-      bytes memory signature = solution[1];
+    function _verifySolution(uint256 lockNumber, bytes memory solution) internal view override returns (bool) {
+      bytes[] memory solutionDecoded = abi.decode(solution, (bytes[]));
+      address lock = BytesLib.toAddress(getLockValue(lockNumber)[0], 0);
+      bytes32 message = BytesLib.toBytes32(solutionDecoded[0], 0);
+      bytes memory signature = solutionDecoded[1];
       return _getSignerAddress(message, signature) == lock;
     }
 

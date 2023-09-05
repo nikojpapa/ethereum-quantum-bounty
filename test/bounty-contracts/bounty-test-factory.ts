@@ -63,7 +63,7 @@ function getBountyTest (bountyUtils: BountyUtils) {
         })
 
         it('should not allow further solve attempts if already solved', async () => {
-          const tx = submitSolution(0, [Buffer.from('')], bounty)
+          const tx = submitSolution(0, Buffer.from(''), bounty)
           await expect(tx).to.be.revertedWith('Already solved')
         })
       })
@@ -95,9 +95,11 @@ function getBountyTest (bountyUtils: BountyUtils) {
       it('should set locks as publicly available', async () => {
         const locks = await bountyUtils.getLocks(bounty)
         for (let i = 0; i < locks.length; i++) {
-          const expectedPublicKey = locks[i]
-          const bountyLock = Buffer.from(arrayify(await bounty.locks(i)))
-          expect(bountyLock).deep.equal(expectedPublicKey)
+          const expectedLock = locks[i]
+          for (let j = 0; j < expectedLock.length; j++) {
+            const bountyLock = Buffer.from(arrayify(await bounty.locks(i, j)))
+            expect(bountyLock).deep.equal(expectedLock[j])
+          }
         }
       })
     })
@@ -168,13 +170,13 @@ function getBountyTest (bountyUtils: BountyUtils) {
       })
 
       it('should not allow a reveal without a commit', async () => {
-        const arbitrarySolution: bytes[] = []
+        const arbitrarySolution: bytes = '0x'
         const tx = bounty.solve(arbitraryLockNumber, arbitrarySolution)
         await expect(tx).to.be.revertedWith('Not committed yet')
       })
 
       it('should not allow a reveal within a day of the commit', async () => {
-        const arbitrarySolutions: bytes[] = []
+        const arbitrarySolutions: bytes = '0x'
         await bounty.commitSolution(arbitraryLockNumber, arbitrarySolutionHashBuffer)
 
         const justBeforeADay = bountyUtils.ONE_DAY_IN_SECONDS - ONE_MINUTE_IN_SECONDS
