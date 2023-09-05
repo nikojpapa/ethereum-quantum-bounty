@@ -76,6 +76,6 @@ contract OrderFindingAccumulator is OrderFindingBounty {
   }
 
   function _resetBytes() private {
-    currentBytes = "";
+    currentBytes = '';
   }
 }

@@ -4,6 +4,7 @@ import {
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { BigNumber } from 'ethers'
+import { submitSolution } from '../../bounty-utils'
 
 const MAX_GAS_LIMIT_OPTION = { gasLimit: BigNumber.from('0x1c9c380') }
 
@@ -17,6 +18,16 @@ describe('OrderFindingBountyWithLockGeneration', () => {
     }
     return bounty
   }
+
+  it('should not allow a solution if generation is incomplete', async () => {
+    const numberOfLocks = 1
+    const byteSizeOfModulus = 1
+    const bounty = await new OrderFindingBountyWithLockGeneration__factory(ethersSigner)
+      .deploy(numberOfLocks, byteSizeOfModulus)
+    const arbitrarySolution = '0x01'
+    const tx = submitSolution(0, arbitrarySolution, bounty)
+    await expect(tx).to.be.revertedWith('Lock has not been generated yet.')
+  })
 
   it('should revert lock generation if already done', async () => {
     const numberOfLocks = 1

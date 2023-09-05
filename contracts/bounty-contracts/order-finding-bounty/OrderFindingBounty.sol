@@ -11,6 +11,7 @@ abstract contract OrderFindingBounty is BountyContract {
 
   function _verifySolution(uint256 lockNumber, bytes memory solution) internal view override returns (bool) {
     bytes[] memory lock = getLockValue(lockNumber);
+    require(lock.length > 0, 'Lock has not been generated yet.');
     bytes memory modulus = lock[0];
     bytes memory base = lock[1];
 
