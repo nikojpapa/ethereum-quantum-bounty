@@ -9,16 +9,14 @@ contract OrderFindingBountyWithLockGeneration is OrderFindingBounty {
 
   OrderFindingAccumulator private orderFindingAccumulator;
 
-  uint256 private byteSizeOfModulusInit;
-  constructor(uint256 numberOfLocksInit, uint256 byteSizeOfModulusInitArg)
+  constructor(uint256 numberOfLocksInit, uint256 byteSizeOfModulusInit)
     OrderFindingBounty(numberOfLocksInit)
   {
-    byteSizeOfModulusInit = byteSizeOfModulusInitArg;
+    orderFindingAccumulator = new OrderFindingAccumulator(numberOfLocksInit, byteSizeOfModulusInit);
   }
 
-  function init() public override {
-    orderFindingAccumulator = new OrderFindingAccumulator(numberOfLocksInit, byteSizeOfModulusInit);
-    lockManager = orderFindingAccumulator;
+  function lockManager() internal view override returns (LockManager) {
+    return orderFindingAccumulator;
   }
 
   function isCheckingPrime() public view returns (bool) {
@@ -30,7 +28,7 @@ contract OrderFindingBountyWithLockGeneration is OrderFindingBounty {
   }
 
   function triggerLockAccumulation() public {
-    require(generationIsDone(), 'Locks have already been generated');
+    require(!generationIsDone(), 'Locks have already been generated');
     bytes memory randomNumber = '';
     if (!orderFindingAccumulator.isCheckingPrime()) randomNumber = _generateRandomBytes();
     orderFindingAccumulator.accumulate(randomNumber);

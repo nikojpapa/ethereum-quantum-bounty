@@ -28,13 +28,13 @@ const deployOrderFindingBounty: DeployFunction = async function (hre: HardhatRun
   gasUsed = gasUsed.add(deployResult.receipt?.gasUsed)
 
   const bounty = await ethers.getContractAt('OrderFindingBountyWithLockGeneration', deployResult.address)
-  while (!(await bounty.generationIsDone())) {
+  while (!(await bounty.generationIsDone() as boolean)) {
     ++numberOfAccumulations
     const tx = await bounty.triggerLockAccumulation(MAX_GAS_LIMIT_OPTION)
     const receipt = await tx.wait()
 
-    if (await bounty.isCheckingBase()) {
-      while (await bounty.isCheckingBase()) {
+    if (await bounty.isCheckingPrime() as boolean) {
+      while (await bounty.isCheckingPrime() as boolean) {
         console.log('_b: ', (await bounty.currentPrimeCheck()))
         await bounty.triggerLockAccumulation(MAX_GAS_LIMIT_OPTION)
       }

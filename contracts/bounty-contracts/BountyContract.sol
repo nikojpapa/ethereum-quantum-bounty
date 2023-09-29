@@ -8,13 +8,12 @@ import "./CommitRevealManager.sol";
 abstract contract BountyContract {
   bool public solved;
 
-  LockManager internal lockManager;
   CommitRevealManager private commitRevealManager;
+  LockManager private lockManagerDefault;
 
-  uint256 internal numberOfLocksInit;
-  constructor(uint256 numberOfLocksInitArg) {
-    numberOfLocksInit = numberOfLocksInitArg;
+  constructor(uint256 numberOfLocksInit) {
     commitRevealManager = new CommitRevealManager();
+    lockManagerDefault = new LockManager(numberOfLocksInit);
   }
 
   modifier requireUnsolved() {
@@ -22,18 +21,18 @@ abstract contract BountyContract {
     _;
   }
 
-  function init() public virtual {
-    lockManager = new LockManager(numberOfLocksInit);
+  function lockManager() internal view virtual returns (LockManager) {
+    return lockManagerDefault;
   }
 
   function _verifySolution(uint256 lockNumber, bytes memory solution) internal view virtual returns (bool);
 
   function getLock(uint256 lockNumber) public view returns (bytes[] memory) {
-    return lockManager.getLock(lockNumber);
+    return lockManager().getLock(lockNumber);
   }
 
   function numberOfLocks() public view returns (uint256) {
-    return lockManager.numberOfLocks();
+    return lockManager().numberOfLocks();
   }
 
   function commitSolution(uint256 lockNumber, bytes memory solutionHash) public requireUnsolved {
@@ -48,8 +47,8 @@ abstract contract BountyContract {
     require(commitRevealManager.verifyReveal(msg.sender, lockNumber, solution), "Solution hash doesn't match");
     require(_verifySolution(lockNumber, solution), 'Invalid solution');
 
-    lockManager.setLocksSolvedStatus(true, lockNumber);
-    if (lockManager.allLocksSolved()) {
+    lockManager().setLocksSolvedStatus(lockNumber, true);
+    if (lockManager().allLocksSolved()) {
       solved = true;
       _sendBountyToSolver();
     }

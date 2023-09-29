@@ -21,16 +21,14 @@ contract PrimeFactoringBountyWithRsaUfo is PrimeFactoringBounty {
 
   RsaUfoAccumulator private rsaUfoAccumulator;
 
-  uint256 private bytesPerPrimeInit;
-  constructor(uint256 numberOfLocksInit, uint256 bytesPerPrimeInitArg)
+  constructor(uint256 numberOfLocksInit, uint256 bytesPerPrimeInit)
     PrimeFactoringBounty(numberOfLocksInit)
   {
-    bytesPerPrimeInit = bytesPerPrimeInitArg;
+    rsaUfoAccumulator = new RsaUfoAccumulator(numberOfLocksInit, 3 * bytesPerPrimeInit);
   }
 
-  function init() public override {
-    rsaUfoAccumulator = new RsaUfoAccumulator(numberOfLocksInit, 3 * bytesPerPrimeInit);
-    lockManager = rsaUfoAccumulator;
+  function lockManager() internal view override returns (LockManager) {
+    return rsaUfoAccumulator;
   }
 
   function triggerLockAccumulation() public {

@@ -21,7 +21,7 @@ contract LockManager {
     return locks[lockNumber];
   }
 
-  function setLocksSolvedStatus(bool status, uint256 lockNumber) public {
+  function setLocksSolvedStatus(uint256 lockNumber, bool status) public {
     lockSolvedStatus[lockNumber] = status;
   }
 
