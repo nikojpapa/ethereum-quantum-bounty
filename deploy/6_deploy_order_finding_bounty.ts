@@ -15,7 +15,6 @@ const deployOrderFindingBounty: DeployFunction = async function (hre: HardhatRun
   const byteSizeOfModulus = 646
   let gasUsed = BigNumber.from(0)
   let numberOfAccumulations = 0
-  let numberOfBasesGenerated = 0
 
   const deployResult = await hre.deployments.deploy(
     'OrderFindingBountyWithLockGeneration', {
@@ -34,25 +33,20 @@ const deployOrderFindingBounty: DeployFunction = async function (hre: HardhatRun
     const tx = await bounty.triggerLockAccumulation(MAX_GAS_LIMIT_OPTION)
     const receipt = await tx.wait()
 
-    let baseToCheckValue = (await bounty.baseToCheck()).values().next().value
-    if (baseToCheckValue !== '0x') {
-      ++numberOfBasesGenerated
-      while (baseToCheckValue !== '0x') {
-        console.log('_b: ', (await bounty._b()).values().next().value)
+    if (await bounty.isCheckingBase()) {
+      while (await bounty.isCheckingBase()) {
+        console.log('_b: ', (await bounty.currentPrimeCheck()))
         await bounty.triggerLockAccumulation(MAX_GAS_LIMIT_OPTION)
-        baseToCheckValue = (await bounty.baseToCheck()).values().next().value
       }
     }
 
     gasUsed = gasUsed.add(receipt.gasUsed)
   }
   console.log('==OrderFindingBounty gasUsed=', gasUsed.toHexString())
-  const modulus = await bounty.locks(0, 0)
-  const base = await bounty.locks(0, 1)
+  const [modulus, base] = await bounty.getLock(0)
   console.log('Modulus: ', modulus)
   console.log('Base: ', base)
   console.log(`Number of accumulations: ${numberOfAccumulations}`)
-  console.log(`Number of bases generated: ${numberOfBasesGenerated}`)
 }
 
 module.exports = deployOrderFindingBounty

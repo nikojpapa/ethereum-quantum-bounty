@@ -16,15 +16,26 @@ import "./RsaUfoAccumulator.sol";
  * The number of locks should be log(1-p) / log(1 - 0.16), where p is the probability that at least one lock
  * is difficult to factor.
  */
-contract PrimeFactoringBountyWithRsaUfo is RsaUfoAccumulator {
+contract PrimeFactoringBountyWithRsaUfo is PrimeFactoringBounty {
   uint256 private iteration;
 
-  constructor(uint256 numberOfLocksInit, uint256 bytesPerPrimeInit)
-    RsaUfoAccumulator(numberOfLocksInit, 3 * bytesPerPrimeInit) {}
+  RsaUfoAccumulator private rsaUfoAccumulator;
+
+  uint256 private bytesPerPrimeInit;
+  constructor(uint256 numberOfLocksInit, uint256 bytesPerPrimeInitArg)
+    PrimeFactoringBounty(numberOfLocksInit)
+  {
+    bytesPerPrimeInit = bytesPerPrimeInitArg;
+  }
+
+  function init() public override {
+    rsaUfoAccumulator = new RsaUfoAccumulator(numberOfLocksInit, 3 * bytesPerPrimeInit);
+    lockManager = rsaUfoAccumulator;
+  }
 
   function triggerLockAccumulation() public {
-    require(!generationIsDone, 'Locks have already been generated');
+    require(!rsaUfoAccumulator.generationIsDone(), 'Locks have already been generated');
     bytes memory randomNumber = abi.encodePacked(keccak256(abi.encodePacked(block.difficulty, iteration++)));
-    accumulate(randomNumber);
+    rsaUfoAccumulator.accumulate(randomNumber);
   }
 }

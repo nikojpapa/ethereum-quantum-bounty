@@ -3,9 +3,10 @@ pragma solidity ^0.8.12;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../OrderFindingBounty.sol";
+import "../../LocksManager.sol";
 
 
-contract OrderFindingAccumulator is OrderFindingBounty {
+contract OrderFindingAccumulator is LockManager {
   using BigNumbers for *;
 
   bool public generationIsDone;
@@ -17,18 +18,18 @@ contract OrderFindingAccumulator is OrderFindingBounty {
 
   uint8 private _BITS_PER_BYTE = 8;
 
-  BigNumber public _a;
-  BigNumber public _b;
-  BigNumber public baseToCheck;
+  BigNumber private _a;
+  BigNumber private _b;
+  BigNumber private baseToCheck;
 
-  constructor(uint256 numberOfLocks, uint256 bytesPerLockInit)
-    OrderFindingBounty(numberOfLocks)
+  constructor(uint256 numberOfLocksInit, uint256 bytesPerLockInit)
+    LockManager(numberOfLocksInit)
   {
     _resetBytes();
     bytesPerLock = bytesPerLockInit;
   }
 
-  function accumulate(bytes memory randomBytes) internal {
+  function accumulate(bytes memory randomBytes) public {
     if (generationIsDone) return;
     if (baseToCheck.bitlen > 0) {
       _isCoprime();
@@ -68,8 +69,10 @@ contract OrderFindingAccumulator is OrderFindingBounty {
   /* Adapted rom https://gist.github.com/3esmit/8c0a63f17f2f2448cc1576eb27fe5910
    */
   function _isCoprime() private {
-    if (_b.isZero()) {
-      if (_a.eq(BigNumbers.one())) {
+    bool checkIsFinished = _b.isZero();
+    if (checkIsFinished) {
+      bool isCoprime = _a.eq(BigNumbers.one());
+      if (isCoprime) {
         locks[currentLockNumber][1] = _slicePrefix(baseToCheck.val);
         ++currentLockNumber;
         if (currentLockNumber >= numberOfLocks) generationIsDone = true;
@@ -91,5 +94,13 @@ contract OrderFindingAccumulator is OrderFindingBounty {
     _a = BigNumber('', false, 0);
     _b = BigNumber('', false, 0);
     baseToCheck = BigNumber('', false, 0);
+  }
+
+  function isCheckingPrime() public view returns (bool) {
+    return baseToCheck.bitlen > 0;
+  }
+
+  function currentPrimeCheck() public view returns (bytes memory) {
+    return _b.val;
   }
 }

@@ -18,7 +18,7 @@ describe('OrderFindingAccumulator', () => {
   }
 
   async function expectLockParameter (lockNumber: number, lockParameterNumber: number, expectedValue: string): Promise<void> {
-    expect(await accumulator.locks(lockNumber, lockParameterNumber)).to.be.eq(expectedValue)
+    expect((await accumulator.getLock(lockNumber))[lockParameterNumber]).to.be.eq(expectedValue)
   }
 
   async function expectLock (lockNumber: number, expectedValues: string[]): Promise<void> {
@@ -30,10 +30,8 @@ describe('OrderFindingAccumulator', () => {
   async function accumulateValues (hexStrings: string[]): Promise<void> {
     for (const hexString of hexStrings) {
       await accumulator.triggerAccumulate(Buffer.from(arrayify(hexString)))
-      let baseToCheckValue = (await accumulator.baseToCheck()).values().next().value
-      while (baseToCheckValue !== '0x') {
+      while (await accumulator.isCheckingPrime()) {
         await accumulator.triggerAccumulate([])
-        baseToCheckValue = (await accumulator.baseToCheck()).values().next().value
       }
     }
   }
@@ -188,8 +186,8 @@ describe('OrderFindingAccumulator', () => {
         await expectLock(0, ['0xf5', '0x3d'])
       })
 
-      it('should have no second lock', async () => {
-        await expect(accumulator.locks(1, 0)).to.be.reverted
+      it('should not have a second lock', async () => {
+        expect(await accumulator.getLock(1)).to.eql([])
       })
     })
 

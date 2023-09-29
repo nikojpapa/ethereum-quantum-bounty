@@ -5,23 +5,24 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 import "../PrimeFactoringBounty.sol";
+import "../../LocksManager.sol";
 
 
-contract RsaUfoAccumulator is PrimeFactoringBounty {
+contract RsaUfoAccumulator is LockManager {
   bool public generationIsDone;
 
   bytes private currentLock;
   uint256 private currentLockNumber;
   uint256 private bytesPerLock;
 
-  constructor(uint256 numberOfLocks, uint256 bytesPerLockInit)
-    PrimeFactoringBounty(numberOfLocks)
+  constructor(uint256 numberOfLocksInit, uint256 bytesPerLockInit)
+    LockManager(numberOfLocksInit)
   {
     currentLock = "";
     bytesPerLock = bytesPerLockInit;
   }
 
-  function accumulate(bytes memory randomBytes) internal {
+  function accumulate(bytes memory randomBytes) public {
     if (generationIsDone) return;
 
     uint256 numBytesToAccumulate = Math.min(randomBytes.length, bytesPerLock - currentLock.length);
