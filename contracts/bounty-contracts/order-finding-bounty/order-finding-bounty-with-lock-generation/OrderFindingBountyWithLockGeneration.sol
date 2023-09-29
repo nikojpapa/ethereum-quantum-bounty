@@ -12,7 +12,9 @@ contract OrderFindingBountyWithLockGeneration is OrderFindingAccumulator {
 
   function triggerLockAccumulation() public {
     require(!generationIsDone, 'Locks have already been generated');
-    bytes memory randomNumber = abi.encodePacked(keccak256(abi.encodePacked(block.difficulty, iteration++)));
+    bytes memory randomNumber = '';
+    bool isCheckingPrime = baseToCheck.bitlen > 0;
+    if (!isCheckingPrime) randomNumber = abi.encodePacked(keccak256(abi.encodePacked(block.difficulty, iteration++)));
     accumulate(randomNumber);
   }
 }

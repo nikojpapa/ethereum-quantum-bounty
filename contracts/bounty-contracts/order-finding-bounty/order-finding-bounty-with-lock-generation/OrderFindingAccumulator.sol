@@ -17,6 +17,10 @@ contract OrderFindingAccumulator is OrderFindingBounty {
 
   uint8 private _BITS_PER_BYTE = 8;
 
+  BigNumber public _a;
+  BigNumber public _b;
+  BigNumber public baseToCheck;
+
   constructor(uint256 numberOfLocks, uint256 bytesPerLockInit)
     OrderFindingBounty(numberOfLocks)
   {
@@ -26,6 +30,10 @@ contract OrderFindingAccumulator is OrderFindingBounty {
 
   function accumulate(bytes memory randomBytes) internal {
     if (generationIsDone) return;
+    if (baseToCheck.bitlen > 0) {
+      _isCoprime();
+      return;
+    }
 
     uint256 numBytesToAccumulate = Math.min(randomBytes.length, bytesPerLock - currentBytes.length);
     bytes memory bytesToAccumulate = BytesLib.slice(randomBytes, 0, numBytesToAccumulate);
@@ -43,14 +51,14 @@ contract OrderFindingAccumulator is OrderFindingBounty {
         BigNumber memory negativeOne = modulus.sub(BigNumbers.one());
 
         bool hasTrivialOrder = base.eq(BigNumbers.one()) || base.eq(negativeOne);
-        if (!hasTrivialOrder && _isCoprime(base, modulus)) {
-          locks[currentLockNumber][1] = _slicePrefix(base.val);
-          ++currentLockNumber;
+        if (!hasTrivialOrder) {
+          _a = modulus;
+          _b = baseToCheck = base;
+          return;
         }
       }
       _resetBytes();
     }
-    if (currentLockNumber >= numberOfLocks) generationIsDone = true;
   }
 
   function _setFirstBit(bytes storage value) private {
@@ -59,16 +67,19 @@ contract OrderFindingAccumulator is OrderFindingBounty {
 
   /* Adapted rom https://gist.github.com/3esmit/8c0a63f17f2f2448cc1576eb27fe5910
    */
-  function _isCoprime(BigNumber memory a, BigNumber memory b) private view returns (bool) {
-    BigNumber memory _a = a;
-    BigNumber memory _b = b;
-    BigNumber memory temp;
-    while (_b.gt(BigNumbers.zero())) {
-      temp = _b;
+  function _isCoprime() private {
+    if (_b.isZero()) {
+      if (_a.eq(BigNumbers.one())) {
+        locks[currentLockNumber][1] = _slicePrefix(baseToCheck.val);
+        ++currentLockNumber;
+        if (currentLockNumber >= numberOfLocks) generationIsDone = true;
+      }
+      _resetBytes();
+    } else {
+      BigNumber memory temp = _b;
       _b = _a.mod(_b);
       _a = temp;
     }
-    return _a.eq(BigNumbers.one());
   }
 
   function _slicePrefix(bytes memory value) private view returns (bytes memory) {
@@ -77,5 +88,8 @@ contract OrderFindingAccumulator is OrderFindingBounty {
 
   function _resetBytes() private {
     currentBytes = '';
+    _a = BigNumber('', false, 0);
+    _b = BigNumber('', false, 0);
+    baseToCheck = BigNumber('', false, 0);
   }
 }

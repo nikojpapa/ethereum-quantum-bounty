@@ -30,6 +30,11 @@ describe('OrderFindingAccumulator', () => {
   async function accumulateValues (hexStrings: string[]): Promise<void> {
     for (const hexString of hexStrings) {
       await accumulator.triggerAccumulate(Buffer.from(arrayify(hexString)))
+      let baseToCheckValue = (await accumulator.baseToCheck()).values().next().value
+      while (baseToCheckValue !== '0x') {
+        await accumulator.triggerAccumulate([])
+        baseToCheckValue = (await accumulator.baseToCheck()).values().next().value
+      }
     }
   }
 
