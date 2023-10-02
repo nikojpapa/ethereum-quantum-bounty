@@ -2,63 +2,70 @@
 pragma solidity ^0.8.12;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "../OrderFindingBounty.sol";
+import "solidity-bytes-utils/contracts/BytesLib.sol";
 import "../../LocksManager.sol";
+import "../../BigNumbers.sol";
+
+  struct Accumulator {
+  Locks locks;
+  bool generationIsDone;
+  uint8 parametersPerLock;
+
+  bytes _currentBytes;
+  uint256 _currentLockNumber;
+  uint256 _bytesPerLock;
+
+  BigNumber _a;
+  BigNumber _b;
+  BigNumber _baseToCheck;
+}
 
 
-contract OrderFindingAccumulator is LockManager {
+library OrderFindingAccumulator {
   using BigNumbers for *;
 
-  bool public generationIsDone;
-  uint8 public parametersPerLock = 2;
+  uint8 private constant _BITS_PER_BYTE = 8;
 
-  bytes private currentBytes;
-  uint256 private currentLockNumber;
-  uint256 private bytesPerLock;
-
-  uint8 private _BITS_PER_BYTE = 8;
-
-  BigNumber private _a;
-  BigNumber private _b;
-  BigNumber private baseToCheck;
-
-  constructor(uint256 numberOfLocksInit, uint256 bytesPerLockInit)
-    LockManager(numberOfLocksInit)
+  function init(uint256 numberOfLocks, uint256 bytesPerLock) internal returns (Accumulator memory accumulator)
   {
-    _resetBytes();
-    bytesPerLock = bytesPerLockInit;
+    accumulator.locks = LockManager.init(numberOfLocks);
+    accumulator._bytesPerLock = bytesPerLock;
+//    _resetBytes(accumulator);
+    return accumulator;
   }
 
-  function accumulate(bytes memory randomBytes) public {
-    if (generationIsDone) return;
-    if (baseToCheck.bitlen > 0) {
-      _isCoprime();
+  function accumulate(Accumulator storage accumulator, bytes memory randomBytes) internal {
+    if (accumulator.generationIsDone) return;
+    if (accumulator._baseToCheck.bitlen > 0) {
+      _isCoprime(accumulator);
       return;
     }
 
-    uint256 numBytesToAccumulate = Math.min(randomBytes.length, bytesPerLock - currentBytes.length);
+    uint256 numBytesToAccumulate = Math.min(randomBytes.length, accumulator._bytesPerLock - accumulator._currentBytes.length);
     bytes memory bytesToAccumulate = BytesLib.slice(randomBytes, 0, numBytesToAccumulate);
-    currentBytes = BytesLib.concat(currentBytes, bytesToAccumulate);
+    accumulator._currentBytes = BytesLib.concat(accumulator._currentBytes, bytesToAccumulate);
 
-    if (currentBytes.length >= bytesPerLock) {
-      if (locks[currentLockNumber].length == 0) locks[currentLockNumber] = new bytes[](parametersPerLock);
+    if (accumulator._currentBytes.length >= accumulator._bytesPerLock) {
+      if (accumulator.locks.locks[accumulator._currentLockNumber].length == 0) {
+        accumulator.locks.locks[accumulator._currentLockNumber] = new bytes[](accumulator.parametersPerLock);
+      }
 
-      if (locks[currentLockNumber][0].length == 0) {
-        _setFirstBit(currentBytes);
-        locks[currentLockNumber][0] = currentBytes;
+      if (accumulator.locks.locks[accumulator._currentLockNumber][0].length == 0) {
+        _setFirstBit(accumulator._currentBytes);
+        accumulator.locks.locks[accumulator._currentLockNumber][0] = accumulator._currentBytes;
       } else {
-        BigNumber memory modulus = locks[currentLockNumber][0].init(false);
-        BigNumber memory base = currentBytes.init(false).mod(modulus);
+        BigNumber memory modulus = accumulator.locks.locks[accumulator._currentLockNumber][0].init(false);
+        BigNumber memory base = accumulator._currentBytes.init(false).mod(modulus);
         BigNumber memory negativeOne = modulus.sub(BigNumbers.one());
 
         bool hasTrivialOrder = base.eq(BigNumbers.one()) || base.eq(negativeOne);
         if (!hasTrivialOrder) {
-          _a = modulus;
-          _b = baseToCheck = base;
+          accumulator._a = modulus;
+          accumulator._b = accumulator._baseToCheck = base;
           return;
         }
       }
-      _resetBytes();
+      _resetBytes(accumulator);
     }
   }
 
@@ -68,39 +75,40 @@ contract OrderFindingAccumulator is LockManager {
 
   /* Adapted rom https://gist.github.com/3esmit/8c0a63f17f2f2448cc1576eb27fe5910
    */
-  function _isCoprime() private {
-    bool checkIsFinished = _b.isZero();
+  function _isCoprime(Accumulator storage accumulator) private {
+    bool checkIsFinished = accumulator._b.isZero();
     if (checkIsFinished) {
-      bool isCoprime = _a.eq(BigNumbers.one());
+      bool isCoprime = accumulator._a.eq(BigNumbers.one());
       if (isCoprime) {
-        locks[currentLockNumber][1] = _slicePrefix(baseToCheck.val);
-        ++currentLockNumber;
-        if (currentLockNumber >= numberOfLocks) generationIsDone = true;
+        accumulator.locks.locks[accumulator._currentLockNumber][1] = _slicePrefix(accumulator);
+        ++accumulator._currentLockNumber;
+        if (accumulator._currentLockNumber >= accumulator.locks.numberOfLocks) accumulator.generationIsDone = true;
       }
-      _resetBytes();
+      _resetBytes(accumulator);
     } else {
-      BigNumber memory temp = _b;
-      _b = _a.mod(_b);
-      _a = temp;
+      BigNumber memory temp = accumulator._b;
+      accumulator._b = accumulator._a.mod(accumulator._b);
+      accumulator._a = temp;
     }
   }
 
-  function _slicePrefix(bytes memory value) private view returns (bytes memory) {
-    return BytesLib.slice(value, value.length - bytesPerLock, bytesPerLock);
+  function _slicePrefix(Accumulator storage accumulator) private view returns (bytes memory) {
+    bytes memory value = accumulator._baseToCheck.val;
+    return BytesLib.slice(value, value.length - accumulator._bytesPerLock, accumulator._bytesPerLock);
   }
 
-  function _resetBytes() private {
-    currentBytes = '';
-    _a = BigNumber('', false, 0);
-    _b = BigNumber('', false, 0);
-    baseToCheck = BigNumber('', false, 0);
+  function _resetBytes(Accumulator storage accumulator) private {
+    accumulator._currentBytes = '';
+    accumulator._a = BigNumber('', false, 0);
+    accumulator._b = BigNumber('', false, 0);
+    accumulator._baseToCheck = BigNumber('', false, 0);
   }
 
-  function isCheckingPrime() public view returns (bool) {
-    return baseToCheck.bitlen > 0;
+  function isCheckingPrime(Accumulator storage accumulator) public view returns (bool) {
+    return accumulator._baseToCheck.bitlen > 0;
   }
 
-  function currentPrimeCheck() public view returns (bytes memory) {
-    return _b.val;
+  function currentPrimeCheck(Accumulator storage accumulator) public view returns (bytes memory) {
+    return accumulator._b.val;
   }
 }

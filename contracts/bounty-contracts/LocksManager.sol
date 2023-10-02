@@ -1,34 +1,37 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.12;
 
-contract LockManager {
-  bool[] public lockSolvedStatus;
-  uint256 public numberOfLocks;
+struct Locks {
+  bytes[][] locks;
+  uint256 numberOfLocks;
+  bool[] solvedStatus;
+}
 
-  bytes[][] internal locks;
-
-  constructor(uint256 numberOfLocksInit) {
-    locks = new bytes[][](numberOfLocksInit);
-    lockSolvedStatus = new bool[](numberOfLocks);
-    numberOfLocks = numberOfLocksInit;
+library LockManager {
+  function init(uint256 numberOfLocks) internal view returns (Locks memory) {
+    return Locks(
+      new bytes[][](numberOfLocks),
+      numberOfLocks,
+      new bool[](numberOfLocks)
+    );
   }
 
-  function setLock(uint256 lockNumber, bytes[] memory value) public {
-    locks[lockNumber] = value;
+  function setLock(Locks storage locks, uint256 lockNumber, bytes[] memory value) internal {
+    locks.locks[lockNumber] = value;
   }
 
-  function getLock(uint256 lockNumber) public view returns (bytes[] memory) {
-    return locks[lockNumber];
+  function getLock(Locks storage locks, uint256 lockNumber) internal view returns (bytes[] memory) {
+    return locks.locks[lockNumber];
   }
 
-  function setLocksSolvedStatus(uint256 lockNumber, bool status) public {
-    lockSolvedStatus[lockNumber] = status;
+  function setLocksSolvedStatus(Locks storage locks, uint256 lockNumber, bool status) internal {
+    locks.solvedStatus[lockNumber] = status;
   }
 
-  function allLocksSolved() public view returns (bool) {
+  function allLocksSolved(Locks storage locks) internal view returns (bool) {
     bool allSolved = true;
-    for (uint256 lockNumber = 0; lockNumber < lockSolvedStatus.length; lockNumber++) {
-      if (!lockSolvedStatus[lockNumber]) {
+    for (uint256 lockNumber = 0; lockNumber < locks.solvedStatus.length; lockNumber++) {
+      if (!locks.solvedStatus[lockNumber]) {
         allSolved = false;
         break;
       }

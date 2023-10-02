@@ -14,7 +14,7 @@ contract SignatureBounty is BountyContract {
     BountyContract(publicKeys.length)
   {
     for (uint256 lockNumber = 0; lockNumber < publicKeys.length; lockNumber++) {
-      lockManager().setLock(lockNumber, publicKeys[lockNumber]);
+      LockManager.setLock(lockManager(), lockNumber, publicKeys[lockNumber]);
     }
   }
 

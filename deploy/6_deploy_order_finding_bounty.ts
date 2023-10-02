@@ -28,6 +28,7 @@ const deployOrderFindingBounty: DeployFunction = async function (hre: HardhatRun
   gasUsed = gasUsed.add(deployResult.receipt?.gasUsed)
 
   const bounty = await ethers.getContractAt('OrderFindingBountyWithLockGeneration', deployResult.address)
+  await bounty.init()
   while (!(await bounty.generationIsDone() as boolean)) {
     ++numberOfAccumulations
     const tx = await bounty.triggerLockAccumulation(MAX_GAS_LIMIT_OPTION)

@@ -2,40 +2,41 @@
 pragma solidity ^0.8.12;
 
 import "./OrderFindingAccumulator.sol";
+import "../OrderFindingBounty.sol";
 
 
 contract OrderFindingBountyWithLockGeneration is OrderFindingBounty {
   uint256 private iteration;
 
-  OrderFindingAccumulator private orderFindingAccumulator;
+  Accumulator private orderFindingAccumulator;
 
-  constructor(uint256 numberOfLocksInit, uint256 byteSizeOfModulusInit)
-    OrderFindingBounty(numberOfLocksInit)
+  constructor(uint256 numberOfLocks, uint256 byteSizeOfModulus)
+    OrderFindingBounty(numberOfLocks)
   {
-    orderFindingAccumulator = new OrderFindingAccumulator(numberOfLocksInit, byteSizeOfModulusInit);
+    orderFindingAccumulator = OrderFindingAccumulator.init(numberOfLocks, byteSizeOfModulus);
   }
 
-  function lockManager() internal view override returns (LockManager) {
-    return orderFindingAccumulator;
+  function lockManager() internal view override returns (Locks storage) {
+    return orderFindingAccumulator.locks;
   }
 
   function isCheckingPrime() public view returns (bool) {
-    return orderFindingAccumulator.isCheckingPrime();
+    return OrderFindingAccumulator.isCheckingPrime(orderFindingAccumulator);
   }
 
   function currentPrimeCheck() public view returns (bytes memory) {
-    return orderFindingAccumulator.currentPrimeCheck();
+    return OrderFindingAccumulator.currentPrimeCheck(orderFindingAccumulator);
   }
 
   function triggerLockAccumulation() public {
-    require(!generationIsDone(), 'Locks have already been generated');
+    require(!orderFindingAccumulator.generationIsDone, 'Locks have already been generated');
     bytes memory randomNumber = '';
-    if (!orderFindingAccumulator.isCheckingPrime()) randomNumber = _generateRandomBytes();
-    orderFindingAccumulator.accumulate(randomNumber);
+    if (!OrderFindingAccumulator.isCheckingPrime(orderFindingAccumulator)) randomNumber = _generateRandomBytes();
+    OrderFindingAccumulator.accumulate(orderFindingAccumulator, randomNumber);
   }
 
   function generationIsDone() public view returns (bool) {
-    return orderFindingAccumulator.generationIsDone();
+    return orderFindingAccumulator.generationIsDone;
   }
 
   function _generateRandomBytes() private returns (bytes memory) {
