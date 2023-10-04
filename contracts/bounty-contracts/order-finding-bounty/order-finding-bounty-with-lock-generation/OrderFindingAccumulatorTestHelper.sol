@@ -4,7 +4,7 @@ pragma solidity ^0.8.12;
 import "./OrderFindingAccumulator.sol";
 
 contract OrderFindingAccumulatorTestHelper {
-  Accumulator private accumulator;
+  Accumulator public accumulator;
 
   constructor(uint256 numberOfLocks, uint256 bytesPerPrime) {
     accumulator = OrderFindingAccumulator.init(numberOfLocks, bytesPerPrime);
@@ -12,5 +12,9 @@ contract OrderFindingAccumulatorTestHelper {
 
   function triggerAccumulate(bytes memory randomBytes) public {
     OrderFindingAccumulator.accumulate(accumulator, randomBytes);
+  }
+
+  function isCheckingPrime() public returns (bool) {
+    return OrderFindingAccumulator.isCheckingPrime(accumulator);
   }
 }

@@ -13,7 +13,7 @@ describe('OrderFindingBountyWithLockGeneration', () => {
 
   async function deployNewAccumulator (numberOfLocks: number, byteSizeOfModulus: number): Promise<OrderFindingBountyWithLockGeneration> {
     const bounty = await new OrderFindingBountyWithLockGeneration__factory(ethersSigner).deploy(numberOfLocks, byteSizeOfModulus)
-    while (!(await bounty.generationIsDone() as boolean)) {
+    while (!(await bounty.callStatic.generationIsDone())) {
       await bounty.triggerLockAccumulation(MAX_GAS_LIMIT_OPTION)
     }
     return bounty

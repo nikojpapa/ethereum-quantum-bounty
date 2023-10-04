@@ -9,7 +9,7 @@ describe('PrimeFactoringBountyWithRsaUfo', () => {
 
   async function deployNewRsaUfoAccumulator (numberOfLocks: number, bytesPerPrime: number): Promise<PrimeFactoringBountyWithRsaUfo> {
     const bounty = await new PrimeFactoringBountyWithRsaUfo__factory(ethersSigner).deploy(numberOfLocks, bytesPerPrime)
-    while (!(await bounty.generationIsDone())) {
+    while (!(await bounty.callStatic.generationIsDone())) {
       await bounty.triggerLockAccumulation()
     }
     return bounty
@@ -28,8 +28,8 @@ describe('PrimeFactoringBountyWithRsaUfo', () => {
     const bytesPerPrime = 1
     const primeFactoringBountyWithRsaUfos = await Promise.all(Array(2).fill(0)
       .map(async () => deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)))
-    const firstLock = await primeFactoringBountyWithRsaUfos[0].locks(0, 0)
-    const secondLock = await primeFactoringBountyWithRsaUfos[1].locks(0, 0)
+    const firstLock = (await primeFactoringBountyWithRsaUfos[0].getLock(0))[0]
+    const secondLock = (await primeFactoringBountyWithRsaUfos[1].getLock(0))[0]
     expect(firstLock).to.not.be.eq(secondLock)
   })
 
@@ -45,7 +45,7 @@ describe('PrimeFactoringBountyWithRsaUfo', () => {
       const expectedLockLength = hexCharactersPerByte * lockBytesPerPrimeByte * bytesPerPrime + hexPrefixLength
 
       const locks = await Promise.all(new Array(numberOfLocks).fill(0)
-        .map(async (_, i) => primeFactoringBountyWithRsaUfo.locks(i, 0)))
+        .map(async (_, i) => (await primeFactoringBountyWithRsaUfo.getLock(i))[0]))
       expect(locks.length).to.be.eq(numberOfLocks)
       expect(locks.every(lock => lock.length === expectedLockLength)).to.be.eq(true)
       expect(locks.slice(1).every(lock => lock !== locks[0])).to.be.eq(true)

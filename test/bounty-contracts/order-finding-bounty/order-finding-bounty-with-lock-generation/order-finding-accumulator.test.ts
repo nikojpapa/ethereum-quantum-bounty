@@ -7,31 +7,35 @@ import { Buffer } from 'buffer'
 describe('OrderFindingAccumulator', () => {
   const ethersSigner = ethers.provider.getSigner()
 
-  let accumulator: OrderFindingAccumulatorTestHelper
+  let testHelper: OrderFindingAccumulatorTestHelper
+
+  async function accumulator (): Promise<any> {
+    return await testHelper.accumulator()
+  }
 
   async function deployNewAccumulator (numberOfLocks: number, bytesPerPrime: number): Promise<OrderFindingAccumulatorTestHelper> {
     return await new OrderFindingAccumulatorTestHelper__factory(ethersSigner).deploy(numberOfLocks, bytesPerPrime)
   }
 
   async function expectDone (expectedValue: boolean): Promise<void> {
-    expect(await accumulator.generationIsDone()).to.be.eq(expectedValue)
+    expect((await accumulator()).generationIsDone).to.be.eq(expectedValue)
   }
 
   async function expectLockParameter (lockNumber: number, lockParameterNumber: number, expectedValue: string): Promise<void> {
-    expect((await accumulator.getLock(lockNumber))[lockParameterNumber]).to.be.eq(expectedValue)
+    expect((await accumulator()).locks.vals[lockNumber][lockParameterNumber]).to.be.eq(expectedValue)
   }
 
   async function expectLock (lockNumber: number, expectedValues: string[]): Promise<void> {
-    for (let i = 0; i < (await accumulator.parametersPerLock()); i++) {
+    for (let i = 0; i < (await accumulator()).parametersPerLock; i++) {
       await expectLockParameter(lockNumber, i, expectedValues[i])
     }
   }
 
   async function accumulateValues (hexStrings: string[]): Promise<void> {
     for (const hexString of hexStrings) {
-      await accumulator.triggerAccumulate(Buffer.from(arrayify(hexString)))
-      while (await accumulator.isCheckingPrime()) {
-        await accumulator.triggerAccumulate([])
+      await testHelper.triggerAccumulate(Buffer.from(arrayify(hexString)))
+      while ((await testHelper.callStatic.isCheckingPrime())) {
+        await testHelper.triggerAccumulate([])
       }
     }
   }
@@ -41,7 +45,7 @@ describe('OrderFindingAccumulator', () => {
       beforeEach(async () => {
         const numberOfLocks = 1
         const bytesPerPrime = 1
-        accumulator = await deployNewAccumulator(numberOfLocks, bytesPerPrime)
+        testHelper = await deployNewAccumulator(numberOfLocks, bytesPerPrime)
       })
 
       describe('ensure the base is between 1 and -1', () => {
@@ -94,7 +98,7 @@ describe('OrderFindingAccumulator', () => {
     it('should not set the first bit of subsequent accumulations of the modulus', async () => {
       const numberOfLocks = 1
       const bytesPerPrime = 2
-      accumulator = await deployNewAccumulator(numberOfLocks, bytesPerPrime)
+      testHelper = await deployNewAccumulator(numberOfLocks, bytesPerPrime)
       await accumulateValues(['0x81', '0x02'])
       await expectLockParameter(0, 0, '0x8102')
     })
@@ -104,7 +108,7 @@ describe('OrderFindingAccumulator', () => {
     beforeEach(async () => {
       const numberOfLocks = 1
       const bytesPerPrime = 1
-      accumulator = await deployNewAccumulator(numberOfLocks, bytesPerPrime)
+      testHelper = await deployNewAccumulator(numberOfLocks, bytesPerPrime)
       await accumulateValues(['0xf5', '0x3d'])
     })
 
@@ -121,7 +125,7 @@ describe('OrderFindingAccumulator', () => {
     beforeEach(async () => {
       const numberOfLocks = 1
       const bytesPerPrime = 1
-      accumulator = await deployNewAccumulator(numberOfLocks, bytesPerPrime)
+      testHelper = await deployNewAccumulator(numberOfLocks, bytesPerPrime)
       await accumulateValues(['0xf5d4', '0x3d8c'])
     })
 
@@ -138,7 +142,7 @@ describe('OrderFindingAccumulator', () => {
     beforeEach(async () => {
       const numberOfLocks = 1
       const bytesPerPrime = 2
-      accumulator = await deployNewAccumulator(numberOfLocks, bytesPerPrime)
+      testHelper = await deployNewAccumulator(numberOfLocks, bytesPerPrime)
       await accumulateValues(['0xf5', '0x3d', '0x8c'])
     })
 
@@ -173,7 +177,7 @@ describe('OrderFindingAccumulator', () => {
     beforeEach(async () => {
       const numberOfLocks = 2
       const bytesPerPrime = 1
-      accumulator = await deployNewAccumulator(numberOfLocks, bytesPerPrime)
+      testHelper = await deployNewAccumulator(numberOfLocks, bytesPerPrime)
       await accumulateValues(['0xf5', '0x3d'])
     })
 
@@ -187,7 +191,7 @@ describe('OrderFindingAccumulator', () => {
       })
 
       it('should not have a second lock', async () => {
-        expect(await accumulator.getLock(1)).to.eql([])
+        expect((await accumulator()).locks.vals[1]).to.eql([])
       })
     })
 
@@ -214,7 +218,7 @@ describe('OrderFindingAccumulator', () => {
     beforeEach(async () => {
       const numberOfLocks = 1
       const bytesPerPrime = 1
-      accumulator = await deployNewAccumulator(numberOfLocks, bytesPerPrime)
+      testHelper = await deployNewAccumulator(numberOfLocks, bytesPerPrime)
       await accumulateValues(['0xf5', '0x3d'])
     })
 

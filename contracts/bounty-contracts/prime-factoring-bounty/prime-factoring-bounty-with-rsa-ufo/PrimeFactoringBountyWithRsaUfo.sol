@@ -36,4 +36,8 @@ contract PrimeFactoringBountyWithRsaUfo is PrimeFactoringBounty {
     bytes memory randomNumber = abi.encodePacked(keccak256(abi.encodePacked(block.difficulty, iteration++)));
     RsaUfoAccumulator.accumulate(rsaUfoAccumulator, randomNumber);
   }
+
+  function generationIsDone() public view returns (bool) {
+    return rsaUfoAccumulator.generationIsDone;
+  }
 }
