@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 import "../BountyContract.sol";
-import "../LocksManager.sol";
 
 contract SignatureBounty is BountyContract {
   using ECDSA for bytes32;

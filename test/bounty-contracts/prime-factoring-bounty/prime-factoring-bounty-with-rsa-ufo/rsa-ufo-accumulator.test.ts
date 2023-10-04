@@ -3,7 +3,6 @@ import { ethers } from 'hardhat'
 import { arrayify } from 'ethers/lib/utils'
 import { expect } from 'chai'
 import { Buffer } from 'buffer'
-import exp from 'constants'
 
 describe('RsaUfoAccumulator', () => {
   const ethersSigner = ethers.provider.getSigner()
@@ -14,11 +13,13 @@ describe('RsaUfoAccumulator', () => {
   }
 
   async function expectDone (expectedValue: boolean): Promise<void> {
-    expect(await rsaUfoAccumulator.generationIsDone()).to.be.eq(expectedValue)
+    expect((await rsaUfoAccumulator.accumulator()).generationIsDone).to.be.eq(expectedValue)
   }
 
   async function expectLock (lockNumber: number, expectedValue: string): Promise<void> {
-    expect(await rsaUfoAccumulator.locks(lockNumber, 0)).to.be.eq(expectedValue)
+    const accumulator = await rsaUfoAccumulator.accumulator()
+    const lockValue = accumulator.locks.vals[lockNumber][0]
+    expect(lockValue).to.be.eq(expectedValue)
   }
 
   describe('exact right size input', () => {
@@ -72,8 +73,8 @@ describe('RsaUfoAccumulator', () => {
       })
 
       it('should have no locks', async () => {
-        const tx = rsaUfoAccumulator.locks(0, 0)
-        await expect(tx).to.be.reverted
+        const accumulator = await rsaUfoAccumulator.accumulator()
+        expect(accumulator.locks.vals[0].length).to.eq(0)
       })
     })
 
@@ -111,8 +112,8 @@ describe('RsaUfoAccumulator', () => {
       })
 
       it('should have no second lock', async () => {
-        const tx = rsaUfoAccumulator.locks(1, 0)
-        await expect(tx).to.be.reverted
+        const accumulator = await rsaUfoAccumulator.accumulator()
+        expect(accumulator.locks.vals[1].length).to.eq(0)
       })
     })
 

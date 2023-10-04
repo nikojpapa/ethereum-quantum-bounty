@@ -2,7 +2,6 @@
 pragma solidity ^0.8.12;
 
 import "../PrimeFactoringBounty.sol";
-import "../../LocksManager.sol";
 
 contract PrimeFactoringBountyWithPredeterminedLocks is PrimeFactoringBounty {
   constructor(uint256 numberOfLocks)

@@ -3,8 +3,8 @@ pragma solidity ^0.8.12;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
-import "../../LocksManager.sol";
 import "../../BigNumbers.sol";
+import "../../LockManager.sol";
 
 struct Accumulator {
   Locks locks;
@@ -47,15 +47,15 @@ library OrderFindingAccumulator {
     accumulator._currentBytes = BytesLib.concat(accumulator._currentBytes, bytesToAccumulate);
 
     if (accumulator._currentBytes.length >= accumulator._bytesPerLock) {
-      if (accumulator.locks.locks[accumulator._currentLockNumber].length == 0) {
-        accumulator.locks.locks[accumulator._currentLockNumber] = new bytes[](accumulator.parametersPerLock);
+      if (accumulator.locks.vals[accumulator._currentLockNumber].length == 0) {
+        accumulator.locks.vals[accumulator._currentLockNumber] = new bytes[](accumulator.parametersPerLock);
       }
 
-      if (accumulator.locks.locks[accumulator._currentLockNumber][0].length == 0) {
+      if (accumulator.locks.vals[accumulator._currentLockNumber][0].length == 0) {
         _setFirstBit(accumulator._currentBytes);
-        accumulator.locks.locks[accumulator._currentLockNumber][0] = accumulator._currentBytes;
+        accumulator.locks.vals[accumulator._currentLockNumber][0] = accumulator._currentBytes;
       } else {
-        BigNumber memory modulus = accumulator.locks.locks[accumulator._currentLockNumber][0].init(false);
+        BigNumber memory modulus = accumulator.locks.vals[accumulator._currentLockNumber][0].init(false);
         BigNumber memory base = accumulator._currentBytes.init(false).mod(modulus);
         BigNumber memory negativeOne = modulus.sub(BigNumbers.one());
 
@@ -81,7 +81,7 @@ library OrderFindingAccumulator {
     if (checkIsFinished) {
       bool isCoprime = accumulator._a.eq(BigNumbers.one());
       if (isCoprime) {
-        accumulator.locks.locks[accumulator._currentLockNumber][1] = _slicePrefix(accumulator);
+        accumulator.locks.vals[accumulator._currentLockNumber][1] = _slicePrefix(accumulator);
         ++accumulator._currentLockNumber;
         if (accumulator._currentLockNumber >= accumulator.locks.numberOfLocks) accumulator.generationIsDone = true;
       }

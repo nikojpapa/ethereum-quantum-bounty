@@ -2,8 +2,8 @@
 pragma solidity ^0.8.12;
 
 import "@openzeppelin/contracts/utils/Address.sol";
-import "./LocksManager.sol";
 import "./CommitRevealManager.sol";
+import "./LockManager.sol";
 
 abstract contract BountyContract {
   bool public solved;

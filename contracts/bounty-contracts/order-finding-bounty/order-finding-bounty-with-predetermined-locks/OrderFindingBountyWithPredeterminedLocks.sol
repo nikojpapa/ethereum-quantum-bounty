@@ -2,7 +2,6 @@
 pragma solidity ^0.8.12;
 
 import "../OrderFindingBounty.sol";
-import "../../LocksManager.sol";
 
 contract OrderFindingBountyWithPredeterminedLocks is OrderFindingBounty {
   constructor(uint256 numberOfLocks)

@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 import "../PrimeFactoringBounty.sol";
-import "../../LocksManager.sol";
+import "../../LockManager.sol";
 
 
 struct Accumulator {
@@ -35,7 +35,7 @@ library RsaUfoAccumulator {
     accumulator._currentLock = BytesLib.concat(accumulator._currentLock, bytesToAccumulate);
 
     if (accumulator._currentLock.length >= accumulator._bytesPerLock) {
-      accumulator.locks.locks[accumulator._currentLockNumber] = [accumulator._currentLock];
+      accumulator.locks.vals[accumulator._currentLockNumber] = [accumulator._currentLock];
       ++accumulator._currentLockNumber;
       accumulator._currentLock = '';
     }

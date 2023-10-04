@@ -7,7 +7,6 @@ import "../../BigNumbers.sol";
 import "../miller-rabin/MillerRabin.sol";
 import "../PrimeFactoringBounty.sol";
 import "./RandomPrimeAccumulator.sol";
-import "../../LocksManager.sol";
 
 contract PrimeFactoringBountyWithLockGeneration is PrimeFactoringBounty, VRFConsumerBase {
   using BigNumbers for *;

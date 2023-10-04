@@ -2,7 +2,7 @@
 pragma solidity ^0.8.12;
 
 struct Locks {
-  bytes[][] locks;
+  bytes[][] vals;
   uint256 numberOfLocks;
   bool[] solvedStatus;
 }
@@ -17,11 +17,11 @@ library LockManager {
   }
 
   function setLock(Locks storage locks, uint256 lockNumber, bytes[] memory value) internal {
-    locks.locks[lockNumber] = value;
+    locks.vals[lockNumber] = value;
   }
 
   function getLock(Locks storage locks, uint256 lockNumber) internal view returns (bytes[] memory) {
-    return locks.locks[lockNumber];
+    return locks.vals[lockNumber];
   }
 
   function setLocksSolvedStatus(Locks storage locks, uint256 lockNumber, bool status) internal {

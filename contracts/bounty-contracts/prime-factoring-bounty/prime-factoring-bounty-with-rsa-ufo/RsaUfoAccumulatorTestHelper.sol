@@ -4,7 +4,7 @@ pragma solidity ^0.8.12;
 import "./RsaUfoAccumulator.sol";
 
 contract RsaUfoAccumulatorTestHelper {
-  Accumulator private accumulator;
+  Accumulator public accumulator;
 
   constructor(uint256 numberOfLocks, uint256 bytesPerPrime) {
     accumulator = RsaUfoAccumulator.init(numberOfLocks, bytesPerPrime);
