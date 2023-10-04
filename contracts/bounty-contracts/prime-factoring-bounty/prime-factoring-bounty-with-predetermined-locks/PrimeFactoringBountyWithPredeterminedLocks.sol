@@ -10,6 +10,6 @@ contract PrimeFactoringBountyWithPredeterminedLocks is PrimeFactoringBounty {
   {}
 
   function setLock(uint256 lockNumber, bytes[] memory lock) public {
-    LockManager.setLock(lockManager(), lockNumber, lock);
+    LockManager.setLock(locks(), lockNumber, lock);
   }
 }

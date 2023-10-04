@@ -16,7 +16,7 @@ library CommitRevealManager {
     address sender,
     uint256 lockNumber,
     bytes memory solutionHash
-  ) public {
+  ) internal {
     Commit storage commit = commits[sender][lockNumber];
     commit.solutionHash = solutionHash;
     commit.timestamp = block.timestamp;
@@ -26,7 +26,7 @@ library CommitRevealManager {
     mapping(address => mapping(uint256 => Commit)) storage commits,
     address sender,
     uint256 lockNumber
-  ) public view returns (bytes memory, uint256) {
+  ) internal view returns (bytes memory, uint256) {
     Commit storage commit = commits[sender][lockNumber];
     _requireCommitExists(commit);
     return (commit.solutionHash, commit.timestamp);
@@ -37,7 +37,7 @@ library CommitRevealManager {
     address sender,
     uint256 lockNumber,
     bytes memory solution
-  ) public view returns (bool) {
+  ) internal view returns (bool) {
     Commit storage commit = commits[sender][lockNumber];
     _requireCommitExists(commit);
     require(block.timestamp - commit.timestamp >= ONE_DAY_IN_SECONDS, 'Cannot reveal within a day of the commit');

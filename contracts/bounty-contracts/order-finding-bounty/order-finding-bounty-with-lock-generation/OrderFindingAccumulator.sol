@@ -6,7 +6,7 @@ import "solidity-bytes-utils/contracts/BytesLib.sol";
 import "../../LocksManager.sol";
 import "../../BigNumbers.sol";
 
-  struct Accumulator {
+struct Accumulator {
   Locks locks;
   bool generationIsDone;
   uint8 parametersPerLock;
@@ -29,6 +29,7 @@ library OrderFindingAccumulator {
   function init(uint256 numberOfLocks, uint256 bytesPerLock) internal returns (Accumulator memory accumulator)
   {
     accumulator.locks = LockManager.init(numberOfLocks);
+    accumulator.parametersPerLock = 2;
     accumulator._bytesPerLock = bytesPerLock;
 //    _resetBytes(accumulator);
     return accumulator;
@@ -104,11 +105,11 @@ library OrderFindingAccumulator {
     accumulator._baseToCheck = BigNumber('', false, 0);
   }
 
-  function isCheckingPrime(Accumulator storage accumulator) public view returns (bool) {
+  function isCheckingPrime(Accumulator storage accumulator) internal view returns (bool) {
     return accumulator._baseToCheck.bitlen > 0;
   }
 
-  function currentPrimeCheck(Accumulator storage accumulator) public view returns (bytes memory) {
+  function currentPrimeCheck(Accumulator storage accumulator) internal view returns (bytes memory) {
     return accumulator._b.val;
   }
 }

@@ -20,18 +20,18 @@ abstract contract BountyContract {
     _;
   }
 
-  function lockManager() internal view virtual returns (Locks storage) {
+  function locks() internal view virtual returns (Locks storage) {
     return locksDefault;
   }
 
   function _verifySolution(uint256 lockNumber, bytes memory solution) internal view virtual returns (bool);
 
   function getLock(uint256 lockNumber) public view returns (bytes[] memory) {
-    return LockManager.getLock(lockManager(), lockNumber);
+    return LockManager.getLock(locks(), lockNumber);
   }
 
   function numberOfLocks() public view returns (uint256) {
-    return lockManager().numberOfLocks;
+    return locks().numberOfLocks;
   }
 
   function commitSolution(uint256 lockNumber, bytes memory solutionHash) public requireUnsolved {
@@ -46,8 +46,8 @@ abstract contract BountyContract {
     require(CommitRevealManager.verifyReveal(commits, msg.sender, lockNumber, solution), "Solution hash doesn't match");
     require(_verifySolution(lockNumber, solution), 'Invalid solution');
 
-    LockManager.setLocksSolvedStatus(locksDefault, lockNumber, true);
-    if (LockManager.allLocksSolved(locksDefault)) {
+    LockManager.setLocksSolvedStatus(locks(), lockNumber, true);
+    if (LockManager.allLocksSolved(locks())) {
       solved = true;
       _sendBountyToSolver();
     }
