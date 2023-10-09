@@ -11,8 +11,8 @@ const deployOrderFindingBounty: DeployFunction = async function (hre: HardhatRun
   const from = await provider.getSigner().getAddress()
   await new Create2Factory(ethers.provider).deployFactory()
 
-  const numberOfLocks = 1
-  const byteSizeOfModulus = 646
+  const numberOfLocks = 119
+  const byteSizeOfModulus = 128 * 3
   let gasUsed = BigNumber.from(0)
   let numberOfAccumulations = 0
 
