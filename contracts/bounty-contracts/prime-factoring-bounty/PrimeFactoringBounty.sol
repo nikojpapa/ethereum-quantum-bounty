@@ -22,7 +22,7 @@ abstract contract PrimeFactoringBounty is BountyContract {
       product = product.mul(primeFactor.init(false));
     }
 
-    BigNumber memory lock = getLockValue(lockNumber)[0].init(false);
+    BigNumber memory lock = getLock(lockNumber)[0].init(false);
     return product.eq(lock);
   }
 }

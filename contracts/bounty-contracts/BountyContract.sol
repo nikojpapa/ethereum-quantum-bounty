@@ -2,25 +2,17 @@
 pragma solidity ^0.8.12;
 
 import "@openzeppelin/contracts/utils/Address.sol";
-import "solidity-bytes-utils/contracts/BytesLib.sol";
+import "./CommitRevealManager.sol";
+import "./LockManager.sol";
 
 abstract contract BountyContract {
-  bytes[][] public locks;
-  bool[] public lockSolvedStatus;
   bool public solved;
-  uint256 public numberOfLocks;
 
-  struct Commit {
-    bytes solutionHash;
-    uint256 timestamp;
-  }
   mapping(address => mapping(uint256 => Commit)) private commits;
-  uint256 private ONE_DAY_IN_SECONDS = 86400;
+  Locks private locksDefault;
 
-  constructor(uint256 numberOfLocksInit) {
-    numberOfLocks = numberOfLocksInit;
-    locks = new bytes[][](numberOfLocks);
-    lockSolvedStatus = new bool[](numberOfLocks);
+  constructor(uint256 numberOfLocks) {
+    locksDefault = LockManager.init(numberOfLocks);
   }
 
   modifier requireUnsolved() {
@@ -28,58 +20,37 @@ abstract contract BountyContract {
     _;
   }
 
-  function getLockValue(uint256 lockNumber) internal view returns (bytes[] memory) {
-    return locks[lockNumber];
-  }
-
-  function commitSolution(uint256 lockNumber, bytes memory solutionHash) public requireUnsolved {
-    Commit storage commit = commits[msg.sender][lockNumber];
-    commit.solutionHash = solutionHash;
-    commit.timestamp = block.timestamp;
-  }
-
-  function getMyCommit(uint256 lockNumber) public view returns (bytes memory, uint256) {
-    Commit storage commit = commits[msg.sender][lockNumber];
-    _requireCommitExists(commit);
-    return (commit.solutionHash, commit.timestamp);
-  }
-
-  function solve(uint256 lockNumber, bytes memory solution) public requireUnsolved {
-    require(_verifyReveal(lockNumber, solution), "Solution hash doesn't match");
-    require(_verifySolution(lockNumber, solution), 'Invalid solution');
-
-    lockSolvedStatus[lockNumber] = true;
-    if (_allLocksSolved()) {
-      solved = true;
-      _sendBountyToSolver();
-    }
-  }
-
-  function _verifyReveal(uint256 lockNumber, bytes memory solution) private view returns (bool) {
-    Commit storage commit = commits[msg.sender][lockNumber];
-    _requireCommitExists(commit);
-    require(block.timestamp - commit.timestamp >= ONE_DAY_IN_SECONDS, 'Cannot reveal within a day of the commit');
-
-    bytes memory solutionEncoding = abi.encode(msg.sender, solution);
-    bytes32 solutionHash = keccak256(solutionEncoding);
-    return BytesLib.equal(abi.encodePacked(solutionHash), commit.solutionHash);
-  }
-
-  function _requireCommitExists(Commit memory commit) private pure {
-    require(!BytesLib.equal(commit.solutionHash, ""), 'Not committed yet');
+  function locks() internal view virtual returns (Locks storage) {
+    return locksDefault;
   }
 
   function _verifySolution(uint256 lockNumber, bytes memory solution) internal view virtual returns (bool);
 
-  function _allLocksSolved() private view returns (bool) {
-    bool allSolved = true;
-    for (uint256 lockNumber = 0; lockNumber < lockSolvedStatus.length; lockNumber++) {
-      if (!lockSolvedStatus[lockNumber]) {
-        allSolved = false;
-        break;
-      }
+  function getLock(uint256 lockNumber) public view returns (bytes[] memory) {
+    return LockManager.getLock(locks(), lockNumber);
+  }
+
+  function numberOfLocks() public view returns (uint256) {
+    return locks().numberOfLocks;
+  }
+
+  function commitSolution(uint256 lockNumber, bytes memory solutionHash) public requireUnsolved {
+    CommitRevealManager.commitSolution(commits, msg.sender, lockNumber, solutionHash);
+  }
+
+  function getMyCommit(uint256 lockNumber) public view returns (bytes memory, uint256) {
+    return CommitRevealManager.getMyCommit(commits, msg.sender, lockNumber);
+  }
+
+  function solve(uint256 lockNumber, bytes memory solution) public requireUnsolved {
+    require(CommitRevealManager.verifyReveal(commits, msg.sender, lockNumber, solution), "Solution hash doesn't match");
+    require(_verifySolution(lockNumber, solution), 'Invalid solution');
+
+    LockManager.setLocksSolvedStatus(locks(), lockNumber, true);
+    if (LockManager.allLocksSolved(locks())) {
+      solved = true;
+      _sendBountyToSolver();
     }
-    return allSolved;
   }
 
   function _sendBountyToSolver() private {

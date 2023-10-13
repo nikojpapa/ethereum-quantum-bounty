@@ -13,7 +13,7 @@ describe('OrderFindingBountyWithLockGeneration', () => {
 
   async function deployNewAccumulator (numberOfLocks: number, byteSizeOfModulus: number): Promise<OrderFindingBountyWithLockGeneration> {
     const bounty = await new OrderFindingBountyWithLockGeneration__factory(ethersSigner).deploy(numberOfLocks, byteSizeOfModulus)
-    while (!(await bounty.generationIsDone())) {
+    while (!(await bounty.callStatic.generationIsDone())) {
       await bounty.triggerLockAccumulation(MAX_GAS_LIMIT_OPTION)
     }
     return bounty
@@ -40,11 +40,11 @@ describe('OrderFindingBountyWithLockGeneration', () => {
   it('should generate different locks on each deploy', async () => {
     const numberOfLocks = 1
     const byteSizeOfModulus = 1
-    const OrderFindingBountyWithLockGenerations = await Promise.all(Array(2).fill(0)
+    const orderFindingBountyWithLockGenerations = await Promise.all(Array(2).fill(0)
       .map(async () => deployNewAccumulator(numberOfLocks, byteSizeOfModulus)))
     const lockComponents = (await Promise.all(Array(2).fill(0)
       .map(async (_, i) => Promise.all(Array(2).fill(0)
-        .map(async (_, j) => OrderFindingBountyWithLockGenerations[i].locks(0, j))))))
+        .map(async (_, j) => (await orderFindingBountyWithLockGenerations[i].getLock(0))[j])))))
       .flat()
     expect((new Set(lockComponents)).size).to.be.eq(lockComponents.length)
   })
@@ -61,7 +61,7 @@ describe('OrderFindingBountyWithLockGeneration', () => {
 
       const locks = (await Promise.all(new Array(numberOfLocks).fill(0)
         .map(async (_, i) => Promise.all(new Array(2).fill(0)
-          .map(async (_, j) => orderFindingBountyWithLockGeneration.locks(i, j))))))
+          .map(async (_, j) => (await orderFindingBountyWithLockGeneration.getLock(i))[j])))))
         .flat()
       expect(locks.every(lock => lock.length === expectedLockLength)).to.be.eq(true)
       expect(locks.slice(1).every(lock => lock !== locks[0])).to.be.eq(true)

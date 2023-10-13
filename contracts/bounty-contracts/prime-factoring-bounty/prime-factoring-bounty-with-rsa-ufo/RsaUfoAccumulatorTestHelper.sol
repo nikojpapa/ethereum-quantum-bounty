@@ -3,11 +3,14 @@ pragma solidity ^0.8.12;
 
 import "./RsaUfoAccumulator.sol";
 
-contract RsaUfoAccumulatorTestHelper is RsaUfoAccumulator {
-  constructor(uint256 numberOfLocksInit, uint256 bytesPerPrimeInit)
-    RsaUfoAccumulator(numberOfLocksInit, bytesPerPrimeInit) {}
+contract RsaUfoAccumulatorTestHelper {
+  Accumulator public accumulator;
+
+  constructor(uint256 numberOfLocks, uint256 bytesPerPrime) {
+    accumulator = RsaUfoAccumulator.init(numberOfLocks, bytesPerPrime);
+  }
 
   function triggerAccumulate(bytes memory randomBytes) public {
-    accumulate(randomBytes);
+    RsaUfoAccumulator.accumulate(accumulator, randomBytes);
   }
 }

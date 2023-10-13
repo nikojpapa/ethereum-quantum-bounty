@@ -5,34 +5,40 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 import "../PrimeFactoringBounty.sol";
+import "../../LockManager.sol";
 
 
-contract RsaUfoAccumulator is PrimeFactoringBounty {
-  bool public generationIsDone;
+struct Accumulator {
+  Locks locks;
+  bool generationIsDone;
 
-  bytes private currentLock;
-  uint256 private currentLockNumber;
-  uint256 private bytesPerLock;
+  bytes _currentLock;
+  uint256 _currentLockNumber;
+  uint256 _bytesPerLock;
+}
 
-  constructor(uint256 numberOfLocks, uint256 bytesPerLockInit)
-    PrimeFactoringBounty(numberOfLocks)
+
+library RsaUfoAccumulator {
+
+  function init(uint256 numberOfLocks, uint256 bytesPerLock) internal returns (Accumulator memory accumulator)
   {
-    currentLock = "";
-    bytesPerLock = bytesPerLockInit;
+    accumulator.locks = LockManager.init(numberOfLocks);
+    accumulator._bytesPerLock = bytesPerLock;
+    return accumulator;
   }
 
-  function accumulate(bytes memory randomBytes) internal {
-    if (generationIsDone) return;
+  function accumulate(Accumulator storage accumulator, bytes memory randomBytes) internal {
+    if (accumulator.generationIsDone) return;
 
-    uint256 numBytesToAccumulate = Math.min(randomBytes.length, bytesPerLock - currentLock.length);
+    uint256 numBytesToAccumulate = Math.min(randomBytes.length, accumulator._bytesPerLock - accumulator._currentLock.length);
     bytes memory bytesToAccumulate = BytesLib.slice(randomBytes, 0, numBytesToAccumulate);
-    currentLock = BytesLib.concat(currentLock, bytesToAccumulate);
+    accumulator._currentLock = BytesLib.concat(accumulator._currentLock, bytesToAccumulate);
 
-    if (currentLock.length >= bytesPerLock) {
-      locks[currentLockNumber] = [currentLock];
-      ++currentLockNumber;
-      currentLock = "";
+    if (accumulator._currentLock.length >= accumulator._bytesPerLock) {
+      accumulator.locks.vals[accumulator._currentLockNumber] = [accumulator._currentLock];
+      ++accumulator._currentLockNumber;
+      accumulator._currentLock = '';
     }
-    if (currentLockNumber >= numberOfLocks) generationIsDone = true;
+    if (accumulator._currentLockNumber >= accumulator.locks.numberOfLocks) accumulator.generationIsDone = true;
   }
 }

@@ -40,7 +40,9 @@ contract PrimeFactoringBountyWithLockGeneration is PrimeFactoringBounty, VRFCons
     if (!randomNumberAccumulator.isDone()) generateLargePrimes();
     else {
       for (uint256 lockNumber = 0; lockNumber < randomNumberAccumulator.numberOfLocks(); lockNumber++) {
-        locks[lockNumber] = [randomNumberAccumulator.locks(lockNumber)];
+        bytes[] memory lock = new bytes[](1);
+        lock[0] = randomNumberAccumulator.locks(lockNumber);
+        LockManager.setLock(locks(), lockNumber, lock);
       }
     }
   }

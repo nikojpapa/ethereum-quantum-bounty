@@ -8,6 +8,6 @@ contract OrderFindingBountyWithPredeterminedLocks is OrderFindingBounty {
     OrderFindingBounty(numberOfLocks) {}
 
   function setLock(uint256 lockNumber, bytes[] memory lock) public {
-    locks[lockNumber] = lock;
+    LockManager.setLock(locks(), lockNumber, lock);
   }
 }

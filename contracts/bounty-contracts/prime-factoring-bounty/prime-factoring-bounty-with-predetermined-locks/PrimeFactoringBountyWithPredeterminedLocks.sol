@@ -5,9 +5,10 @@ import "../PrimeFactoringBounty.sol";
 
 contract PrimeFactoringBountyWithPredeterminedLocks is PrimeFactoringBounty {
   constructor(uint256 numberOfLocks)
-    PrimeFactoringBounty(numberOfLocks) {}
+    PrimeFactoringBounty(numberOfLocks)
+  {}
 
   function setLock(uint256 lockNumber, bytes[] memory lock) public {
-    locks[lockNumber] = lock;
+    LockManager.setLock(locks(), lockNumber, lock);
   }
 }

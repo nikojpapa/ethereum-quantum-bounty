@@ -97,7 +97,7 @@ function getBountyTest (bountyUtils: BountyUtils) {
         for (let i = 0; i < locks.length; i++) {
           const expectedLock = locks[i]
           for (let j = 0; j < expectedLock.length; j++) {
-            const bountyLock = Buffer.from(arrayify(await bounty.locks(i, j)))
+            const bountyLock = Buffer.from(arrayify((await bounty.getLock(i))[j]))
             expect(bountyLock).deep.equal(expectedLock[j])
           }
         }
