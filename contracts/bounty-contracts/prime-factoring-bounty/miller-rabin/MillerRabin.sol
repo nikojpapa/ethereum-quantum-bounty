@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.12;
 
-import "../../BigNumbers.sol";
+import "../../support/BigNumbers.sol";
 
 //From https://github.com/firoorg/solidity-BigNumber/blob/master/src/utils/Crypto.sol
 library MillerRabin {

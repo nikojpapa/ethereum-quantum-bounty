@@ -2,7 +2,7 @@
 pragma solidity ^0.8.12;
 
 import "../BountyContract.sol";
-import "../BigNumbers.sol";
+import "../support/BigNumbers.sol";
 
 abstract contract OrderFindingBounty is BountyContract {
   using BigNumbers for *;

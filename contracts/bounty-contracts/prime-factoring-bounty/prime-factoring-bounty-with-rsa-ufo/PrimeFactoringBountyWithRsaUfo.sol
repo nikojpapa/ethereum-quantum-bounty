@@ -4,9 +4,9 @@ pragma solidity ^0.8.12;
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
-import "../../BigNumbers.sol";
+import "../../support/BigNumbers.sol";
 import "../PrimeFactoringBounty.sol";
-import "./RsaUfoAccumulator.sol";
+import "../../support/random-bytes-accumulator/RandomBytesAccumulator.sol";
 
 
 /* Using methods based on:
@@ -24,7 +24,7 @@ contract PrimeFactoringBountyWithRsaUfo is PrimeFactoringBounty {
   constructor(uint256 numberOfLocks, uint256 bytesPerPrime)
     PrimeFactoringBounty(numberOfLocks)
   {
-    rsaUfoAccumulator = RsaUfoAccumulator.init(numberOfLocks, 3 * bytesPerPrime);
+    rsaUfoAccumulator = RandomBytesAccumulator.init(numberOfLocks, 3 * bytesPerPrime);
   }
 
   function locks() internal view override returns (Locks storage) {
@@ -34,7 +34,7 @@ contract PrimeFactoringBountyWithRsaUfo is PrimeFactoringBounty {
   function triggerLockAccumulation() public {
     require(!rsaUfoAccumulator.generationIsDone, 'Locks have already been generated');
     bytes memory randomNumber = abi.encodePacked(keccak256(abi.encodePacked(block.difficulty, iteration++)));
-    RsaUfoAccumulator.accumulate(rsaUfoAccumulator, randomNumber);
+    RandomBytesAccumulator.accumulate(rsaUfoAccumulator, randomNumber);
   }
 
   function generationIsDone() public view returns (bool) {

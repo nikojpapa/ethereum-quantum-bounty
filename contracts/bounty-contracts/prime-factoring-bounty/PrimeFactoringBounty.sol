@@ -5,7 +5,7 @@ import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 import "../BountyContract.sol";
-import "../BigNumbers.sol";
+import "../support/BigNumbers.sol";
 import "./miller-rabin/MillerRabin.sol";
 
 abstract contract PrimeFactoringBounty is BountyContract {

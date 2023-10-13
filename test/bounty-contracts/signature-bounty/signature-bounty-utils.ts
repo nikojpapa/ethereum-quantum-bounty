@@ -1,7 +1,7 @@
 import { JsonRpcSigner } from '@ethersproject/providers/src.ts/json-rpc-provider'
 import { bytes } from '../../solidityTypes'
 import { ethers, web3 } from 'hardhat'
-import { BountyContract, SignatureBounty, SignatureBounty__factory } from '../../../typechain'
+import { BountyContract, SignatureBountyWithPredeterminedLocks, SignatureBountyWithPredeterminedLocks__factory } from '../../../typechain'
 import { BigNumber, ContractTransaction } from 'ethers'
 import BountyUtils, {
   getLatestSolvedGasCost,
@@ -9,10 +9,10 @@ import BountyUtils, {
   solveBountyReturningUserBalanceBeforeFinalSolution,
   submitSolution
 } from '../bounty-utils'
-import { arrayify, defaultAbiCoder } from 'ethers/lib/utils'
+import { arrayify } from 'ethers/lib/utils'
 import { Buffer } from 'buffer'
 
-class SignatureBountyUtils extends BountyUtils {
+class SignatureBountyWithPredeterminedLocksUtils extends BountyUtils {
   private readonly numberOfLocks: number
   private readonly _publicKeys: bytes[][]
   private _signatures: string[]
@@ -28,7 +28,8 @@ class SignatureBountyUtils extends BountyUtils {
 
   public async deployBounty (): Promise<BountyContract> {
     const ethersSigner = ethers.provider.getSigner()
-    return await new SignatureBounty__factory(ethersSigner).deploy(await this.getLocks())
+    const message = this.arbitraryMessage()
+    return await new SignatureBountyWithPredeterminedLocks__factory(ethersSigner).deploy(await this.getLocks(), message)
   }
 
   public async getLocks (): Promise<bytes[][]> {
@@ -40,33 +41,19 @@ class SignatureBountyUtils extends BountyUtils {
     return this._publicKeys
   }
 
-  public async solveBounty (bounty: SignatureBounty, getUserBalance: () => Promise<BigNumber>): Promise<SolveAttemptResult> {
-    const signaturesWithMessages = await this.getSignaturesWithMessages()
-    const solutions = signaturesWithMessages
-      .map(solution => this.encodeByteArray(solution))
-    return solveBountyReturningUserBalanceBeforeFinalSolution(solutions, bounty, getUserBalance)
+  public async solveBounty (bounty: SignatureBountyWithPredeterminedLocks, getUserBalance: () => Promise<BigNumber>): Promise<SolveAttemptResult> {
+    const signatures = await this.getSignatures(this.arbitraryMessage())
+    return solveBountyReturningUserBalanceBeforeFinalSolution(signatures, bounty, getUserBalance)
   }
 
-  public async solveBountyPartially (bounty: SignatureBounty): Promise<void> {
-    const signaturesWithMessages = await this.getSignaturesWithMessages()
-    const solution = this.encodeByteArray(signaturesWithMessages[0])
-    await submitSolution(0, solution, bounty)
+  public async solveBountyPartially (bounty: SignatureBountyWithPredeterminedLocks): Promise<void> {
+    const signatures = await this.getSignatures(this.arbitraryMessage())
+    await submitSolution(0, signatures[0], bounty)
   }
 
-  public async solveBountyIncorrectly (bounty: SignatureBounty): Promise<ContractTransaction> {
-    const signaturesWithMessages = await this.getSignaturesWithMessages()
-    const solution = this.encodeByteArray(signaturesWithMessages[0])
-    return submitSolution(1, solution, bounty)
-  }
-
-  private encodeByteArray (value: bytes[]): bytes {
-    return defaultAbiCoder.encode(['bytes[]'], [value])
-  }
-
-  private async getSignaturesWithMessages (): Promise<string[][]> {
-    const message = this.arbitraryMessage()
-    const signatures = await this.getSignatures(message)
-    return signatures.map(signature => [message, signature])
+  public async solveBountyIncorrectly (bounty: SignatureBountyWithPredeterminedLocks): Promise<ContractTransaction> {
+    const signatures = await this.getSignatures(this.arbitraryMessage())
+    return submitSolution(1, signatures[0], bounty)
   }
 
   private async getSignatures (message: string): Promise<string[]> {
@@ -95,4 +82,4 @@ class SignatureBountyUtils extends BountyUtils {
   }
 }
 
-export default SignatureBountyUtils
+export default SignatureBountyWithPredeterminedLocksUtils
