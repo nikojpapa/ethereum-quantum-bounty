@@ -23,7 +23,7 @@ import {
 import { signUserOpLamport } from './UserOpLamport'
 import { WalletLamport } from './wallet-lamport'
 import { generateLamportKeys } from './lamport-utils'
-import SignatureBountyUtils from '../bounty-contracts/signature-bounty/signature-bounty-utils'
+import SignatureBountyUtils from '../bounty-contracts/signature-bounty/signature-bounty-with-predetermined-locks/signature-bounty-with-predetermined-locks-utils'
 import { BigNumber } from 'ethers'
 
 const EDCSA_LENGTH = 65

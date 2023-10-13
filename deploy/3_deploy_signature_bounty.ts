@@ -10,17 +10,13 @@ const deploySignatureBounty: DeployFunction = async function (hre: HardhatRuntim
   const from = await (await client.getSigner()).getAddress()
   await new Create2Factory(ethers.provider).deployFactory()
 
-  const publicKeys = []
-  for (let i = 0; i < 10; i++) {
-    const randomWallet = ethers.Wallet.createRandom()
-    publicKeys.push(randomWallet.address)
-  }
+  const numberOfLocks = 1
 
   // const entrypoint = await hre.deployments.get('EntryPoint')
   const account = await hre.deployments.deploy(
-    'SignatureBounty', {
+    'SignatureBountyWithLockGeneration', {
       from,
-      args: [publicKeys],
+      args: [numberOfLocks],
       gasLimit: 6e6,
       deterministicDeployment: true
     })

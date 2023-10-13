@@ -1,14 +1,14 @@
 import { JsonRpcSigner } from '@ethersproject/providers/src.ts/json-rpc-provider'
-import { bytes } from '../../solidityTypes'
+import { bytes } from '../../../solidityTypes'
 import { ethers, web3 } from 'hardhat'
-import { BountyContract, SignatureBountyWithPredeterminedLocks, SignatureBountyWithPredeterminedLocks__factory } from '../../../typechain'
+import { BountyContract, SignatureBountyWithPredeterminedLocks, SignatureBountyWithPredeterminedLocks__factory } from '../../../../typechain'
 import { BigNumber, ContractTransaction } from 'ethers'
 import BountyUtils, {
   getLatestSolvedGasCost,
   SolveAttemptResult,
   solveBountyReturningUserBalanceBeforeFinalSolution,
   submitSolution
-} from '../bounty-utils'
+} from '../../bounty-utils'
 import { arrayify } from 'ethers/lib/utils'
 import { Buffer } from 'buffer'
 

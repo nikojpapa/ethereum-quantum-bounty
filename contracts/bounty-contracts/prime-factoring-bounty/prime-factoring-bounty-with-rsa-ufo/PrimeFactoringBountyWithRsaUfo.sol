@@ -19,25 +19,25 @@ import "../../support/random-bytes-accumulator/RandomBytesAccumulator.sol";
 contract PrimeFactoringBountyWithRsaUfo is PrimeFactoringBounty {
   uint256 private iteration;
 
-  Accumulator private rsaUfoAccumulator;
+  Accumulator private randomBytesAccumulator;
 
   constructor(uint256 numberOfLocks, uint256 bytesPerPrime)
     PrimeFactoringBounty(numberOfLocks)
   {
-    rsaUfoAccumulator = RandomBytesAccumulator.init(numberOfLocks, 3 * bytesPerPrime);
+    randomBytesAccumulator = RandomBytesAccumulator.init(numberOfLocks, 3 * bytesPerPrime);
   }
 
   function locks() internal view override returns (Locks storage) {
-    return rsaUfoAccumulator.locks;
+    return randomBytesAccumulator.locks;
   }
 
   function triggerLockAccumulation() public {
-    require(!rsaUfoAccumulator.generationIsDone, 'Locks have already been generated');
+    require(!generationIsDone(), 'Locks have already been generated');
     bytes memory randomNumber = abi.encodePacked(keccak256(abi.encodePacked(block.difficulty, iteration++)));
-    RandomBytesAccumulator.accumulate(rsaUfoAccumulator, randomNumber);
+    RandomBytesAccumulator.accumulate(randomBytesAccumulator, randomNumber);
   }
 
   function generationIsDone() public view returns (bool) {
-    return rsaUfoAccumulator.generationIsDone;
+    return randomBytesAccumulator.generationIsDone;
   }
 }

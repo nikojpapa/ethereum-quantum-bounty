@@ -1,15 +1,15 @@
-import { RsaUfoAccumulatorTestHelper, RsaUfoAccumulatorTestHelper__factory } from '../../../../typechain'
+import { RandomBytesAccumulatorTestHelper, RandomBytesAccumulatorTestHelper__factory } from '../../../typechain'
 import { ethers } from 'hardhat'
 import { arrayify } from 'ethers/lib/utils'
 import { expect } from 'chai'
 import { Buffer } from 'buffer'
 
-describe('RsaUfoAccumulator', () => {
+describe('RandomBytesAccumulator', () => {
   const ethersSigner = ethers.provider.getSigner()
-  let testHelper: RsaUfoAccumulatorTestHelper
+  let testHelper: RandomBytesAccumulatorTestHelper
 
-  async function deployNewRsaUfoAccumulator (numberOfLocks: number, bytesPerPrime: number): Promise<RsaUfoAccumulatorTestHelper> {
-    return await new RsaUfoAccumulatorTestHelper__factory(ethersSigner).deploy(numberOfLocks, bytesPerPrime)
+  async function deployNewRandomBytesAccumulator (numberOfLocks: number, bytesPerPrime: number): Promise<RandomBytesAccumulatorTestHelper> {
+    return await new RandomBytesAccumulatorTestHelper__factory(ethersSigner).deploy(numberOfLocks, bytesPerPrime)
   }
 
   async function expectDone (expectedValue: boolean): Promise<void> {
@@ -26,7 +26,7 @@ describe('RsaUfoAccumulator', () => {
     beforeEach(async () => {
       const numberOfLocks = 1
       const bytesPerPrime = 1
-      testHelper = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
+      testHelper = await deployNewRandomBytesAccumulator(numberOfLocks, bytesPerPrime)
 
       await testHelper.triggerAccumulate('0x02')
     })
@@ -44,7 +44,7 @@ describe('RsaUfoAccumulator', () => {
     beforeEach(async () => {
       const numberOfLocks = 1
       const bytesPerPrime = 1
-      testHelper = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
+      testHelper = await deployNewRandomBytesAccumulator(numberOfLocks, bytesPerPrime)
 
       await testHelper.triggerAccumulate(Buffer.concat([Buffer.from(arrayify('0x02')), Buffer.from(arrayify('0xa6'))]))
     })
@@ -62,7 +62,7 @@ describe('RsaUfoAccumulator', () => {
     beforeEach(async () => {
       const numberOfLocks = 1
       const bytesPerPrime = 2
-      testHelper = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
+      testHelper = await deployNewRandomBytesAccumulator(numberOfLocks, bytesPerPrime)
 
       await testHelper.triggerAccumulate('0x02')
     })
@@ -97,7 +97,7 @@ describe('RsaUfoAccumulator', () => {
     beforeEach(async () => {
       const numberOfLocks = 2
       const bytesPerPrime = 1
-      testHelper = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
+      testHelper = await deployNewRandomBytesAccumulator(numberOfLocks, bytesPerPrime)
 
       await testHelper.triggerAccumulate('0x02')
     })
@@ -140,7 +140,7 @@ describe('RsaUfoAccumulator', () => {
     beforeEach(async () => {
       const numberOfLocks = 1
       const bytesPerPrime = 1
-      testHelper = await deployNewRsaUfoAccumulator(numberOfLocks, bytesPerPrime)
+      testHelper = await deployNewRandomBytesAccumulator(numberOfLocks, bytesPerPrime)
 
       await testHelper.triggerAccumulate('0x02')
     })
