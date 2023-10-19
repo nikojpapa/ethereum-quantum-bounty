@@ -3,7 +3,7 @@ pragma solidity ^0.8.12;
 
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
-import "../../BigNumbers.sol";
+import "../../support/BigNumbers.sol";
 import "../miller-rabin/MillerRabin.sol";
 
 contract RandomPrimeAccumulator {

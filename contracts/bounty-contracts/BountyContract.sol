@@ -2,8 +2,8 @@
 pragma solidity ^0.8.12;
 
 import "@openzeppelin/contracts/utils/Address.sol";
-import "./CommitRevealManager.sol";
-import "./LockManager.sol";
+import "./support/CommitRevealManager.sol";
+import "./support/LockManager.sol";
 
 abstract contract BountyContract {
   bool public solved;
@@ -11,8 +11,8 @@ abstract contract BountyContract {
   mapping(address => mapping(uint256 => Commit)) private commits;
   Locks private locksDefault;
 
-  constructor(uint256 numberOfLocks) {
-    locksDefault = LockManager.init(numberOfLocks);
+  constructor(uint256 numberOfLocksArg) {
+    locksDefault = LockManager.init(numberOfLocksArg);
   }
 
   modifier requireUnsolved() {

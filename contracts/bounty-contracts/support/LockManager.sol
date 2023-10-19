@@ -8,7 +8,7 @@ struct Locks {
 }
 
 library LockManager {
-  function init(uint256 numberOfLocks) internal view returns (Locks memory) {
+  function init(uint256 numberOfLocks) internal pure returns (Locks memory) {
     return Locks(
       new bytes[][](numberOfLocks),
       numberOfLocks,

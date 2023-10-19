@@ -3,8 +3,9 @@ pragma solidity ^0.8.12;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
-import "../../BigNumbers.sol";
-import "../../LockManager.sol";
+import "../../support/AccumulatorUtils.sol";
+import "../../support/BigNumbers.sol";
+import "../../support/LockManager.sol";
 
 struct Accumulator {
   Locks locks;
@@ -26,7 +27,7 @@ library OrderFindingAccumulator {
 
   uint8 private constant _BITS_PER_BYTE = 8;
 
-  function init(uint256 numberOfLocks, uint256 bytesPerLock) internal returns (Accumulator memory accumulator)
+  function init(uint256 numberOfLocks, uint256 bytesPerLock) internal pure returns (Accumulator memory accumulator)
   {
     accumulator.locks = LockManager.init(numberOfLocks);
     accumulator.parametersPerLock = 2;
@@ -42,10 +43,7 @@ library OrderFindingAccumulator {
       return;
     }
 
-    uint256 numBytesToAccumulate = Math.min(randomBytes.length, accumulator._bytesPerLock - accumulator._currentBytes.length);
-    bytes memory bytesToAccumulate = BytesLib.slice(randomBytes, 0, numBytesToAccumulate);
-    accumulator._currentBytes = BytesLib.concat(accumulator._currentBytes, bytesToAccumulate);
-
+    accumulator._currentBytes = AccumulatorUtils.getRemainingBytes(randomBytes, accumulator._currentBytes, accumulator._bytesPerLock);
     if (accumulator._currentBytes.length >= accumulator._bytesPerLock) {
       if (accumulator.locks.vals[accumulator._currentLockNumber].length == 0) {
         accumulator.locks.vals[accumulator._currentLockNumber] = new bytes[](accumulator.parametersPerLock);

@@ -4,9 +4,9 @@ pragma solidity ^0.8.12;
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
-import "../../BigNumbers.sol";
+import "../../support/BigNumbers.sol";
 import "../PrimeFactoringBounty.sol";
-import "./RsaUfoAccumulator.sol";
+import "../../support/random-bytes-accumulator/RandomBytesAccumulator.sol";
 
 
 /* Using methods based on:
@@ -19,25 +19,25 @@ import "./RsaUfoAccumulator.sol";
 contract PrimeFactoringBountyWithRsaUfo is PrimeFactoringBounty {
   uint256 private iteration;
 
-  Accumulator private rsaUfoAccumulator;
+  Accumulator private randomBytesAccumulator;
 
   constructor(uint256 numberOfLocks, uint256 bytesPerPrime)
     PrimeFactoringBounty(numberOfLocks)
   {
-    rsaUfoAccumulator = RsaUfoAccumulator.init(numberOfLocks, 3 * bytesPerPrime);
+    randomBytesAccumulator = RandomBytesAccumulator.init(numberOfLocks, 3 * bytesPerPrime);
   }
 
   function locks() internal view override returns (Locks storage) {
-    return rsaUfoAccumulator.locks;
+    return randomBytesAccumulator.locks;
   }
 
   function triggerLockAccumulation() public {
-    require(!rsaUfoAccumulator.generationIsDone, 'Locks have already been generated');
+    require(!generationIsDone(), 'Locks have already been generated');
     bytes memory randomNumber = abi.encodePacked(keccak256(abi.encodePacked(block.difficulty, iteration++)));
-    RsaUfoAccumulator.accumulate(rsaUfoAccumulator, randomNumber);
+    RandomBytesAccumulator.accumulate(randomBytesAccumulator, randomNumber);
   }
 
   function generationIsDone() public view returns (bool) {
-    return rsaUfoAccumulator.generationIsDone;
+    return randomBytesAccumulator.generationIsDone;
   }
 }

@@ -14,7 +14,7 @@ contract OrderFindingAccumulatorTestHelper {
     OrderFindingAccumulator.accumulate(accumulator, randomBytes);
   }
 
-  function isCheckingPrime() public returns (bool) {
+  function isCheckingPrime() public view returns (bool) {
     return OrderFindingAccumulator.isCheckingPrime(accumulator);
   }
 }

@@ -3,7 +3,7 @@ pragma solidity ^0.8.12;
 
 import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
 
-import "../../BigNumbers.sol";
+import "../../support/BigNumbers.sol";
 import "../miller-rabin/MillerRabin.sol";
 import "../PrimeFactoringBounty.sol";
 import "./RandomPrimeAccumulator.sol";
