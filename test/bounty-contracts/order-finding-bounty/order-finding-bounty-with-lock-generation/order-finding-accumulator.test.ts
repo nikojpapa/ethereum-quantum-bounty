@@ -3,6 +3,9 @@ import { ethers } from 'hardhat'
 import { arrayify } from 'ethers/lib/utils'
 import { expect } from 'chai'
 import { Buffer } from 'buffer'
+import { BigNumber } from 'ethers'
+
+const EMPTY_BYTES = '0x'
 
 describe('OrderFindingAccumulator', () => {
   const ethersSigner = ethers.provider.getSigner()
@@ -13,8 +16,12 @@ describe('OrderFindingAccumulator', () => {
     return await testHelper.accumulator()
   }
 
-  async function deployNewAccumulator (numberOfLocks: number, bytesPerPrime: number): Promise<OrderFindingAccumulatorTestHelper> {
-    return await new OrderFindingAccumulatorTestHelper__factory(ethersSigner).deploy(numberOfLocks, bytesPerPrime)
+  async function deployNewAccumulator (
+    numberOfLocks: number,
+    bytesPerPrime: number,
+    gcdIterationsPerCall: number = 1
+  ): Promise<OrderFindingAccumulatorTestHelper> {
+    return await new OrderFindingAccumulatorTestHelper__factory(ethersSigner).deploy(numberOfLocks, bytesPerPrime, gcdIterationsPerCall)
   }
 
   async function expectDone (expectedValue: boolean): Promise<void> {
@@ -33,14 +40,63 @@ describe('OrderFindingAccumulator', () => {
 
   async function accumulateValues (hexStrings: string[]): Promise<void> {
     for (const hexString of hexStrings) {
-      await testHelper.triggerAccumulate(Buffer.from(arrayify(hexString)))
+      await accumulateValueWithoutWaitingForPrimeCheck(hexString)
       while ((await testHelper.callStatic.isCheckingPrime())) {
         await testHelper.triggerAccumulate([])
       }
     }
   }
 
-  describe('modulus and base', function () {
+  async function accumulateValueWithoutWaitingForPrimeCheck (hexString: string): Promise<void> {
+    await testHelper.triggerAccumulate(Buffer.from(arrayify(hexString)))
+  }
+
+  describe('multiple gcd iterations', () => {
+    const modulus = '0x81'
+    const base = '0x02'
+
+    async function deployNewAccumulatorWithSetGcdIterations (gcdIterationsPerCall: number): Promise<void> {
+      const numberOfLocks = 1
+      const bytesPerPrime = 1
+      testHelper = await deployNewAccumulator(numberOfLocks, bytesPerPrime, gcdIterationsPerCall)
+      await initializeByteValues()
+    }
+
+    async function initializeByteValues (): Promise<void> {
+      const arbitraryValueToTriggerGcdProcess = EMPTY_BYTES
+      for (const val of [modulus, base, arbitraryValueToTriggerGcdProcess]) {
+        await accumulateValueWithoutWaitingForPrimeCheck(val)
+      }
+    }
+
+    async function expectGcdProcessHasBegun (): Promise<void> {
+      const currentA = BigNumber.from((await testHelper.accumulator())._a.val)
+      expect(currentA.eq(modulus)).to.eq(false)
+    }
+
+    async function expectProperties (isCheckingPrime: boolean, expectedBase: string): Promise<void> {
+      expect(await testHelper.callStatic.isCheckingPrime()).to.eq(isCheckingPrime)
+      await expectLockParameter(0, 1, expectedBase)
+    }
+
+    it('should not finish with 1 gcd iteration', async () => {
+      await deployNewAccumulatorWithSetGcdIterations(1)
+      await expectGcdProcessHasBegun()
+      await expectProperties(true, EMPTY_BYTES)
+    })
+
+    it('should finish with exactly enough gcd iteration', async () => {
+      await deployNewAccumulatorWithSetGcdIterations(3)
+      await expectProperties(false, base)
+    })
+
+    it('should finish with more than enough gcd iterations', async () => {
+      await deployNewAccumulatorWithSetGcdIterations(4)
+      await expectProperties(false, base)
+    })
+  })
+
+  describe('modulus and base', () => {
     describe('single accumulations', () => {
       beforeEach(async () => {
         const numberOfLocks = 1
@@ -56,7 +112,7 @@ describe('OrderFindingAccumulator', () => {
 
         it('should only accept a base that is coprime with the modulus', async () => {
           await accumulateValues(['0x06'])
-          await expectLockParameter(0, 1, '0x')
+          await expectLockParameter(0, 1, EMPTY_BYTES)
           await accumulateValues(['0x02'])
           await expectLockParameter(0, 1, '0x02')
         })
@@ -68,12 +124,12 @@ describe('OrderFindingAccumulator', () => {
 
         it('should not accept a base equal to -1', async () => {
           await accumulateValues(['0x80'])
-          await expectLockParameter(0, 1, '0x')
+          await expectLockParameter(0, 1, EMPTY_BYTES)
         })
 
         it('should not accept a base equal to 1', async () => {
           await accumulateValues(['0x01'])
-          await expectLockParameter(0, 1, '0x')
+          await expectLockParameter(0, 1, EMPTY_BYTES)
         })
       })
 
@@ -153,7 +209,7 @@ describe('OrderFindingAccumulator', () => {
 
       it('should have only the first parameter of the first lock', async () => {
         await expectLockParameter(0, 0, '0xf53d')
-        await expectLockParameter(0, 1, '0x')
+        await expectLockParameter(0, 1, EMPTY_BYTES)
       })
     })
 

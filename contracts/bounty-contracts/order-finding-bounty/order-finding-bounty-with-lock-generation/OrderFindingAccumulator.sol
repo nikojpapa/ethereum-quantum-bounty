@@ -19,6 +19,7 @@ struct Accumulator {
   BigNumber _a;
   BigNumber _b;
   BigNumber _baseToCheck;
+  uint256 _gcdIterationsPerCall;
 }
 
 
@@ -27,12 +28,12 @@ library OrderFindingAccumulator {
 
   uint8 private constant _BITS_PER_BYTE = 8;
 
-  function init(uint256 numberOfLocks, uint256 bytesPerLock) internal pure returns (Accumulator memory accumulator)
+  function init(uint256 numberOfLocks, uint256 bytesPerLock, uint256 gcdIterationsPerCall) internal pure returns (Accumulator memory accumulator)
   {
     accumulator.locks = LockManager.init(numberOfLocks);
     accumulator.parametersPerLock = 2;
     accumulator._bytesPerLock = bytesPerLock;
-//    _resetBytes(accumulator);
+    accumulator._gcdIterationsPerCall = gcdIterationsPerCall;
     return accumulator;
   }
 
@@ -75,19 +76,22 @@ library OrderFindingAccumulator {
   /* Adapted rom https://gist.github.com/3esmit/8c0a63f17f2f2448cc1576eb27fe5910
    */
   function _isCoprime(Accumulator storage accumulator) private {
-    bool checkIsFinished = accumulator._b.isZero();
-    if (checkIsFinished) {
-      bool isCoprime = accumulator._a.eq(BigNumbers.one());
-      if (isCoprime) {
-        accumulator.locks.vals[accumulator._currentLockNumber][1] = _slicePrefix(accumulator);
-        ++accumulator._currentLockNumber;
-        if (accumulator._currentLockNumber >= accumulator.locks.numberOfLocks) accumulator.generationIsDone = true;
+    for (uint256 i = 0; i < accumulator._gcdIterationsPerCall; i++) {
+      bool checkIsFinished = accumulator._b.isZero();
+      if (checkIsFinished) {
+        bool isCoprime = accumulator._a.eq(BigNumbers.one());
+        if (isCoprime) {
+          accumulator.locks.vals[accumulator._currentLockNumber][1] = _slicePrefix(accumulator);
+          ++accumulator._currentLockNumber;
+          if (accumulator._currentLockNumber >= accumulator.locks.numberOfLocks) accumulator.generationIsDone = true;
+        }
+        _resetBytes(accumulator);
+        return;
+      } else {
+        BigNumber memory temp = accumulator._b;
+        accumulator._b = accumulator._a.mod(accumulator._b);
+        accumulator._a = temp;
       }
-      _resetBytes(accumulator);
-    } else {
-      BigNumber memory temp = accumulator._b;
-      accumulator._b = accumulator._a.mod(accumulator._b);
-      accumulator._a = temp;
     }
   }
 
