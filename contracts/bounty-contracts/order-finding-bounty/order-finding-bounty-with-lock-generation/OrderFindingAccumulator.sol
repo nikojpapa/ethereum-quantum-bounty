@@ -76,10 +76,12 @@ library OrderFindingAccumulator {
   /* Adapted rom https://gist.github.com/3esmit/8c0a63f17f2f2448cc1576eb27fe5910
    */
   function _isCoprime(Accumulator storage accumulator) private {
+    BigNumber memory a = accumulator._a;
+    BigNumber memory b = accumulator._b;
     for (uint256 i = 0; i < accumulator._gcdIterationsPerCall; i++) {
-      bool checkIsFinished = accumulator._b.isZero();
+      bool checkIsFinished = b.isZero();
       if (checkIsFinished) {
-        bool isCoprime = accumulator._a.eq(BigNumbers.one());
+        bool isCoprime = a.eq(BigNumbers.one());
         if (isCoprime) {
           accumulator.locks.vals[accumulator._currentLockNumber][1] = _slicePrefix(accumulator);
           ++accumulator._currentLockNumber;
@@ -88,11 +90,13 @@ library OrderFindingAccumulator {
         _resetBytes(accumulator);
         return;
       } else {
-        BigNumber memory temp = accumulator._b;
-        accumulator._b = accumulator._a.mod(accumulator._b);
-        accumulator._a = temp;
+        BigNumber memory temp = b;
+        b = a.mod(b);
+        a = temp;
       }
     }
+    accumulator._a = a;
+    accumulator._b = b;
   }
 
   function _slicePrefix(Accumulator storage accumulator) private view returns (bytes memory) {

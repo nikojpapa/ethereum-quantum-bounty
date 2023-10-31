@@ -14,7 +14,7 @@ const deployOrderFindingBounty: DeployFunction = async function (hre: HardhatRun
 
   const numberOfLocks = 119
   const byteSizeOfModulus = 128 * 3
-  const gcdIterationsPerCall = 2 ** 9
+  const gcdIterationsPerCall = 2 ** 11
   let gasUsed = BigNumber.from(0)
   let maxGas = BigNumber.from(0)
   let numberOfAccumulations = 0
