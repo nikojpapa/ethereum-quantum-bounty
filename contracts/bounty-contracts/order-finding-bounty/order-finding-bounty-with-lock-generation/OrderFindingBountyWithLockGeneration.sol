@@ -10,10 +10,10 @@ contract OrderFindingBountyWithLockGeneration is OrderFindingBounty {
 
   Accumulator private orderFindingAccumulator;
 
-  constructor(uint256 numberOfLocks, uint256 byteSizeOfModulus)
+  constructor(uint256 numberOfLocks, uint256 byteSizeOfModulus, uint256 gcdIterationsPerCall)
     OrderFindingBounty(numberOfLocks)
   {
-    orderFindingAccumulator = OrderFindingAccumulator.init(numberOfLocks, byteSizeOfModulus);
+    orderFindingAccumulator = OrderFindingAccumulator.init(numberOfLocks, byteSizeOfModulus, gcdIterationsPerCall);
   }
 
   function locks() internal view override returns (Locks storage) {

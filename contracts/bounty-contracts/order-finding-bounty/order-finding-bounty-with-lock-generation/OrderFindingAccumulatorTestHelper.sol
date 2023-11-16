@@ -6,8 +6,8 @@ import "./OrderFindingAccumulator.sol";
 contract OrderFindingAccumulatorTestHelper {
   Accumulator public accumulator;
 
-  constructor(uint256 numberOfLocks, uint256 bytesPerPrime) {
-    accumulator = OrderFindingAccumulator.init(numberOfLocks, bytesPerPrime);
+  constructor(uint256 numberOfLocks, uint256 bytesPerPrime, uint256 gcdIterationsPerCall) {
+    accumulator = OrderFindingAccumulator.init(numberOfLocks, bytesPerPrime, gcdIterationsPerCall);
   }
 
   function triggerAccumulate(bytes memory randomBytes) public {
