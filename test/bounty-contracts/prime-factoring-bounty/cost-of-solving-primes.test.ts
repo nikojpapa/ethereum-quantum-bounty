@@ -60,7 +60,7 @@ describe.skip('Test the cost of solving the prime factoring bounty', () => {
     bounty = await deployBounty(locks)
   })
 
-  it('should find the gas cost to solve 120 locks of size 3072 bits', async () => {
+  it('should find the gas cost to solve all locks', async () => {
     for (let i = 0; i < solutions.length; i++) {
       const tx = await submitSolution(i, solutions[i], bounty)
       const receipt = await tx.wait()
@@ -69,7 +69,7 @@ describe.skip('Test the cost of solving the prime factoring bounty', () => {
     expect(gasUsed).to.equal(BigNumber.from(0x1b2befab))
   })
 
-  it('should find the gas cost to solve 1 locks of size 3072 bits', async () => {
+  it('should find the gas cost to solve 1 lock', async () => {
     const arbitraryLockNumber = 0
     const tx = await submitSolution(arbitraryLockNumber, solutions[arbitraryLockNumber], bounty)
     const receipt = await tx.wait()
