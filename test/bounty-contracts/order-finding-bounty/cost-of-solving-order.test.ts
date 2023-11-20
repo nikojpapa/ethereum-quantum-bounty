@@ -9,7 +9,7 @@ import { expect } from 'chai'
 import { BigNumber } from 'ethers'
 import { randomBytes } from 'crypto'
 
-const BITS_PER_BYTE = 8
+const HEX_PREFIX = '0x'
 
 describe('Test the cost of solving the order finding bounty', () => {
   let bounty: OrderFindingBountyWithPredeterminedLocks
@@ -34,13 +34,11 @@ describe('Test the cost of solving the order finding bounty', () => {
     bounty = await deployBounty(locks)
   })
 
-  it.skip('should find the gas cost to attempt a 3071-bit base, 3072-bit modulus with various sized exponents', async () => {
-    let maxGas = BigNumber.from(0)
-    let minGas = null
+  it('should find the gas cost to attempt a 3071-bit base, 3072-bit modulus with various sized exponents', async () => {
+    const gasCosts: BigNumber[] = []
 
-    const bitSizeOfModulus = 3072
-    const maxOrderBitSize = 2 * bitSizeOfModulus
-    const maxOrderByteSize = maxOrderBitSize / BITS_PER_BYTE
+    const byteSizeOfModulus = locks[0][0].length - HEX_PREFIX.length
+    const maxOrderByteSize = 2 * byteSizeOfModulus
 
     for (let i = 1; i <= maxOrderByteSize; i++) {
       const solution = randomBytes(i)
@@ -55,10 +53,21 @@ describe('Test the cost of solving the order finding bounty', () => {
 
       const gasUsed = latestReceipt.gasUsed
       console.log(`Gas for ${i}-byte solution is ${gasUsed.toHexString()}`)
-      if (gasUsed.gt(maxGas)) maxGas = gasUsed
-      if (minGas == null || gasUsed.lt(minGas)) minGas = gasUsed
+      gasCosts.push(gasUsed)
     }
+
+    const maxGas = gasCosts.reduce((acc, curr) => curr.lt(acc) ? curr : acc)
+    const minGas = gasCosts.reduce((acc, curr) => curr.gt(acc) ? curr : acc)
+    const meanGas = gasCosts.reduce((acc, curr) => acc.add(curr)).div(gasCosts.length)
+
+    const sortedGasCosts = gasCosts.sort((a, b) => a.lt(b) ? -1 : 1)
+    const halfIndex = maxOrderByteSize / 2
+    const medianGas = halfIndex % 1 === 0
+      ? sortedGasCosts[halfIndex].add(sortedGasCosts[halfIndex + 1]).div(2)
+      : sortedGasCosts[Math.ceil(halfIndex)]
     console.log(`Min gas: ${minGas.toHexString()}`)
     console.log(`Max gas: ${maxGas.toHexString()}`)
+    console.log(`Mean gas: ${meanGas.toHexString()}`)
+    console.log(`Median gas: ${medianGas.toHexString()}`)
   })
 })

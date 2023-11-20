@@ -82,11 +82,7 @@ library OrderFindingAccumulator {
       bool checkIsFinished = b.isZero();
       if (checkIsFinished) {
         bool isCoprime = a.eq(BigNumbers.one());
-        if (isCoprime) {
-          accumulator.locks.vals[accumulator._currentLockNumber][1] = _slicePrefix(accumulator);
-          ++accumulator._currentLockNumber;
-          if (accumulator._currentLockNumber >= accumulator.locks.numberOfLocks) accumulator.generationIsDone = true;
-        }
+        if (isCoprime) _setBase(accumulator);
         _resetBytes(accumulator);
         return;
       } else {
@@ -97,6 +93,12 @@ library OrderFindingAccumulator {
     }
     accumulator._a = a;
     accumulator._b = b;
+  }
+
+  function _setBase(Accumulator storage accumulator) private {
+    accumulator.locks.vals[accumulator._currentLockNumber][1] = _slicePrefix(accumulator);
+    ++accumulator._currentLockNumber;
+    if (accumulator._currentLockNumber >= accumulator.locks.numberOfLocks) accumulator.generationIsDone = true;
   }
 
   function _slicePrefix(Accumulator storage accumulator) private view returns (bytes memory) {
