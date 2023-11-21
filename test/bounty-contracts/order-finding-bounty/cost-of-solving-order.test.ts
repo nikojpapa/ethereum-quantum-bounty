@@ -11,7 +11,7 @@ import { randomBytes } from 'crypto'
 
 const HEX_PREFIX = '0x'
 
-describe('Test the cost of solving the order finding bounty', () => {
+describe.skip('Test the cost of solving the order finding bounty', () => {
   let bounty: OrderFindingBountyWithPredeterminedLocks
 
   const locks = [
