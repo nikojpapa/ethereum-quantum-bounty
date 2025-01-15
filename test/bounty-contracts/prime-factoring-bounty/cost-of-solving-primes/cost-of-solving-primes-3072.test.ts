@@ -1,5 +1,5 @@
 import { BigNumber } from 'ethers'
-import { costOfSolvingPrimesFactory } from './cost-of-solving-primes/utilities'
+import { costOfSolvingPrimesFactory } from './cost-of-solving-primes-factory'
 
 const primesOf100 = [
   BigNumber.from(2),
@@ -18,7 +18,7 @@ for (const num of primesThatGoIntoLockThreeTimes) {
   for (let i = 0; i < 3; i++) primeFactors.push(num)
 }
 
-describe.skip(
+describe(
   'Test the cost of solving the prime factoring bounty with 3072-bit key',
   costOfSolvingPrimesFactory(128, primeFactors, 0x1b2befab, 0x4b423d)
 )
