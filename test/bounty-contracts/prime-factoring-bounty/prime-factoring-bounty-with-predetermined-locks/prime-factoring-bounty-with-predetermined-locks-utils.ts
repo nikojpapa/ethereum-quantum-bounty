@@ -57,20 +57,20 @@ class PrimeFactoringBountyWithPredeterminedLocksUtils extends BountyUtils {
     return solveBountyReturningUserBalanceBeforeFinalSolution(solutions, bounty, getUserBalance)
   }
 
-  public getSolutions (): bytes[] {
-    return this._getPrimes().map(primes => this.encodeByteArray(primes))
-  }
-
   public async solveBountyPartially (bounty: BountyContract): Promise<void> {
     const primes = this._getPrimes()
-    const solution = this.encodeByteArray(primes[0])
+    const solution = this.getSolutions()[0]
     await submitSolution(0, solution, bounty)
   }
 
   public async solveBountyIncorrectly (bounty: BountyContract): Promise<ContractTransaction> {
     const primes = this._getPrimes()
-    const solution = this.encodeByteArray(primes[0])
+    const solution = this.getSolutions()[0]
     return await submitSolution(1, solution, bounty)
+  }
+
+  public getSolutions (): bytes[] {
+    return this._getPrimes().map(primes => this.encodeByteArray(primes))
   }
 
   private encodeByteArray (value: bytes[]): bytes {

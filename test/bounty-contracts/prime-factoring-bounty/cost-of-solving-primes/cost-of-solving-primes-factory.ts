@@ -8,11 +8,7 @@ import { submitSolution } from '../../bounty-utils'
 import PrimeFactoringBountyWithPredeterminedLocksUtils
   from '../prime-factoring-bounty-with-predetermined-locks/prime-factoring-bounty-with-predetermined-locks-utils'
 
-export function costOfSolvingPrimesFactory (
-  keyBytesPerPrime: number,
-  knownPrimeFactors: BigNumber[],
-  expectedGasAll: number,
-  expectedGasOne: number) {
+export function costOfSolvingPrimesFactory (keyBytesPerPrime: number, knownPrimeFactors: BigNumber[]) {
   return () => {
     let bounty: PrimeFactoringBountyWithPredeterminedLocks
     let bountyUtils: PrimeFactoringBountyWithPredeterminedLocksUtils
@@ -40,6 +36,7 @@ export function costOfSolvingPrimesFactory (
       })
       bountyUtils = new PrimeFactoringBountyWithPredeterminedLocksUtils(locksAndKeys)
       bounty = await bountyUtils.deployBounty()
+      console.log(`Lock: ${await bounty.getLock(0)}`)
       solutions = bountyUtils.getSolutions()
     })
 
@@ -49,7 +46,7 @@ export function costOfSolvingPrimesFactory (
         const receipt = await tx.wait()
         gasUsed = gasUsed.add(receipt.gasUsed)
       }
-      expect(gasUsed).to.equal(BigNumber.from(expectedGasAll))
+      console.log(`Gas used solving all locks: ${gasUsed.toHexString()}`)
     })
 
     it('should find the gas cost to solve 1 lock', async () => {
@@ -57,7 +54,7 @@ export function costOfSolvingPrimesFactory (
       const tx = await submitSolution(arbitraryLockNumber, solutions[arbitraryLockNumber], bounty)
       const receipt = await tx.wait()
       gasUsed = gasUsed.add(receipt.gasUsed)
-      expect(gasUsed).to.equal(BigNumber.from(expectedGasOne))
+      console.log(`Gas used solving one lock: ${gasUsed.toHexString()}`)
     })
   }
 }

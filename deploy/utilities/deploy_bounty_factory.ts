@@ -7,7 +7,8 @@ import fs from 'fs'
 
 const MAX_GAS_LIMIT_OPTION = { gasLimit: BigNumber.from('0x1c9c380') }
 
-export const deployPrimeFactoringBountyFactory = (primeByteLength: number, name: string): DeployFunction => {
+export const deployPrimeFactoringBountyFactory = (primeByteLength: number): DeployFunction => {
+  const name = `PrimeFactoringBountyWithRsaUfo_${primeByteLength * 3}Key`
   return async function (hre: HardhatRuntimeEnvironment) {
     const provider = ethers.provider
     const from = await provider.getSigner().getAddress()
@@ -38,7 +39,7 @@ export const deployPrimeFactoringBountyFactory = (primeByteLength: number, name:
 }
 
 export const deployOrderFindingBountyFactory = (byteSizeOfPrimes: number): DeployFunction => {
-  const name = `OrderFindingBountyWithLockGeneration_${byteSizeOfPrimes * 3}`
+  const name = `OrderFindingBountyWithLockGeneration_${byteSizeOfPrimes * 3}Key`
   return async function (hre: HardhatRuntimeEnvironment) {
     const provider = ethers.provider
     const from = await provider.getSigner().getAddress()
