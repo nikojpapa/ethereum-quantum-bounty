@@ -7,12 +7,13 @@ import { BigNumber } from 'ethers'
 import { submitSolution } from '../../bounty-utils'
 
 const MAX_GAS_LIMIT_OPTION = { gasLimit: BigNumber.from('0x1c9c380') }
+const GCD_ITERATIONS_PER_CALL = 2 ** 11
 
 describe('OrderFindingBountyWithLockGeneration', () => {
   const ethersSigner = ethers.provider.getSigner()
 
   async function deployNewAccumulator (numberOfLocks: number, byteSizeOfModulus: number): Promise<OrderFindingBountyWithLockGeneration> {
-    const bounty = await new OrderFindingBountyWithLockGeneration__factory(ethersSigner).deploy(numberOfLocks, byteSizeOfModulus)
+    const bounty = await new OrderFindingBountyWithLockGeneration__factory(ethersSigner).deploy(numberOfLocks, byteSizeOfModulus, GCD_ITERATIONS_PER_CALL)
     while (!(await bounty.callStatic.generationIsDone())) {
       await bounty.triggerLockAccumulation(MAX_GAS_LIMIT_OPTION)
     }
@@ -23,7 +24,7 @@ describe('OrderFindingBountyWithLockGeneration', () => {
     const numberOfLocks = 1
     const byteSizeOfModulus = 1
     const bounty = await new OrderFindingBountyWithLockGeneration__factory(ethersSigner)
-      .deploy(numberOfLocks, byteSizeOfModulus)
+      .deploy(numberOfLocks, byteSizeOfModulus, GCD_ITERATIONS_PER_CALL)
     const arbitrarySolution = '0x01'
     const tx = submitSolution(0, arbitrarySolution, bounty)
     await expect(tx).to.be.revertedWith('Lock has not been generated yet.')
