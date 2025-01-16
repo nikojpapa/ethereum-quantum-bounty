@@ -1,16 +1,16 @@
 import { ethers } from 'hardhat'
-import { RandomNumberAccumulator, RandomNumberAccumulator__factory } from '../../../../typechain'
+import { RandomPrimeAccumulator, RandomPrimeAccumulator__factory } from '../../../../typechain'
 import { expect } from 'chai'
 import { BigNumber } from 'ethers'
 import { arrayify } from 'ethers/lib/utils'
 
-describe.skip('RandomNumberAccumulator', () => {
+describe.skip('RandomPrimeAccumulator', () => {
   const BYTES_PER_uint256 = 32
   const BITS_PER_BYTE = 8
   const MAX_GAS_LIMIT_OPTION = { gasLimit: BigNumber.from('0x1c9c380') }
 
   const ethersSigner = ethers.provider.getSigner()
-  let randomNumberAccumulator: RandomNumberAccumulator
+  let randomNumberAccumulator: RandomPrimeAccumulator
 
   const _256BitPrimes = [
     '0xc66f06e1b45c9c55073ed83708f390c86fd13e874d211d405abe0d293682ff03',
@@ -22,7 +22,7 @@ describe.skip('RandomNumberAccumulator', () => {
     const numberOfLocks = 1
     const primesPerLock = 1
     const bytesPerPrime = BYTES_PER_uint256 + 1
-    randomNumberAccumulator = await new RandomNumberAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, bytesPerPrime)
+    randomNumberAccumulator = await new RandomPrimeAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, bytesPerPrime)
 
     await randomNumberAccumulator.accumulate(_256BitPrimes[0])
     expect(await randomNumberAccumulator.isDone()).to.be.eq(false)
@@ -32,7 +32,7 @@ describe.skip('RandomNumberAccumulator', () => {
     const numberOfLocks = 1
     const primesPerLock = 1
     const bytesPerPrime = BYTES_PER_uint256
-    randomNumberAccumulator = await new RandomNumberAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, bytesPerPrime)
+    randomNumberAccumulator = await new RandomPrimeAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, bytesPerPrime)
 
     const _256BitPrimeWithoutLeadingBit = _256BitPrimes[0].mask(255)
     await randomNumberAccumulator.accumulate(_256BitPrimeWithoutLeadingBit)
@@ -43,7 +43,7 @@ describe.skip('RandomNumberAccumulator', () => {
     const numberOfLocks = 1
     const primesPerLock = 1
     const bytesPerPrime = BYTES_PER_uint256 * 2
-    randomNumberAccumulator = await new RandomNumberAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, bytesPerPrime)
+    randomNumberAccumulator = await new RandomPrimeAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, bytesPerPrime)
 
     const _512BitPrimeWhereTheCenterBitIs0 = BigNumber.from(arrayify('0xdf122aa1a14be816462ac30f4074c042e899276cfdf4f1c1943ba244edbc904a03faf637e7d554021160496e96dc35afc16758473036077af0ecda7290509a89'))
     const firstHalf = _512BitPrimeWhereTheCenterBitIs0.shr(BYTES_PER_uint256 * BITS_PER_BYTE)
@@ -61,7 +61,7 @@ describe.skip('RandomNumberAccumulator', () => {
     const numberOfLocks = 1
     const primesPerLock = 1
     const bytesPerPrime = BYTES_PER_uint256
-    randomNumberAccumulator = await new RandomNumberAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, bytesPerPrime)
+    randomNumberAccumulator = await new RandomPrimeAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, bytesPerPrime)
 
     await randomNumberAccumulator.accumulate(_256BitPrimes[0], MAX_GAS_LIMIT_OPTION)
     const tx = randomNumberAccumulator.accumulate(_256BitPrimes[0], MAX_GAS_LIMIT_OPTION)
@@ -72,7 +72,7 @@ describe.skip('RandomNumberAccumulator', () => {
     const numberOfLocks = 1
     const primesPerLock = 1
     const bytesPerPrime = BYTES_PER_uint256 * 2
-    randomNumberAccumulator = await new RandomNumberAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, bytesPerPrime)
+    randomNumberAccumulator = await new RandomPrimeAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, bytesPerPrime)
 
     const _512BitPrime = BigNumber.from(arrayify('0xdf122aa1a14be816462ac30f4074c042e899276cfdf4f1c1943ba244edbc904a03faf637e7d554021160496e96dc35afc16758473036077af0ecda7290509a89'))
     const firstHalf = _512BitPrime.shr(BYTES_PER_uint256 * BITS_PER_BYTE)
@@ -87,7 +87,7 @@ describe.skip('RandomNumberAccumulator', () => {
     const numberOfLocks = 1
     const primesPerLock = 1
     const bytesPerPrime = 1
-    randomNumberAccumulator = await new RandomNumberAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, bytesPerPrime)
+    randomNumberAccumulator = await new RandomPrimeAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, bytesPerPrime)
 
     const oneBytePrime = 0xbf
     const remainingBits = (BYTES_PER_uint256 - bytesPerPrime) * BITS_PER_BYTE
@@ -99,7 +99,7 @@ describe.skip('RandomNumberAccumulator', () => {
   it('should use the first and last primes given a composite in between when requiring two primes and one lock', async () => {
     const numberOfLocks = 1
     const primesPerLock = 2
-    randomNumberAccumulator = await new RandomNumberAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, BYTES_PER_uint256)
+    randomNumberAccumulator = await new RandomPrimeAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, BYTES_PER_uint256)
 
     const second256BitPrime = BigNumber.from('0xf6876683602570c564a79e91b1887a8264a2119dee04cccd947e5f9603afd80b')
     const arbitraryComposite = 0x8
@@ -116,7 +116,7 @@ describe.skip('RandomNumberAccumulator', () => {
   it('should use only the prime numbers and pair them correctly for two locks', async () => {
     const numberOfLocks = 2
     const primesPerLock = 2
-    randomNumberAccumulator = await new RandomNumberAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, BYTES_PER_uint256)
+    randomNumberAccumulator = await new RandomPrimeAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, BYTES_PER_uint256)
 
     const additionalPrime = '0xf891cd1b2f83e43a89b2f6f867e45faf8fbbe0c38b77e6d7f18b1db49752b05d'
     const arbitraryComposite = 0x8
@@ -148,7 +148,7 @@ describe.skip('RandomNumberAccumulator', () => {
     beforeEach(async () => {
       const numberOfLocks = 1
       const primesPerLock = 1
-      randomNumberAccumulator = await new RandomNumberAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, BYTES_PER_uint256)
+      randomNumberAccumulator = await new RandomPrimeAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, BYTES_PER_uint256)
 
       const arbitraryCompositeNumber = 8
       await randomNumberAccumulator.accumulate(arbitraryCompositeNumber)
@@ -168,7 +168,7 @@ describe.skip('RandomNumberAccumulator', () => {
     it('should not allow the same prime in a row', async () => {
       const numberOfLocks = 1
       const primesPerLock = 2
-      randomNumberAccumulator = await new RandomNumberAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, BYTES_PER_uint256)
+      randomNumberAccumulator = await new RandomPrimeAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, BYTES_PER_uint256)
 
       for (let i = 0; i < 2; i++) await randomNumberAccumulator.accumulate(_256BitPrimes[0], MAX_GAS_LIMIT_OPTION)
 
@@ -179,7 +179,7 @@ describe.skip('RandomNumberAccumulator', () => {
     it('should allow the same prime in separate locks', async () => {
       const numberOfLocks = 2
       const primesPerLock = 2
-      randomNumberAccumulator = await new RandomNumberAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, BYTES_PER_uint256)
+      randomNumberAccumulator = await new RandomPrimeAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, BYTES_PER_uint256)
 
       await randomNumberAccumulator.accumulate(_256BitPrimes[0], MAX_GAS_LIMIT_OPTION)
       await randomNumberAccumulator.accumulate(_256BitPrimes[1], MAX_GAS_LIMIT_OPTION)
@@ -194,7 +194,7 @@ describe.skip('RandomNumberAccumulator', () => {
     it('should require distinct locks', async () => {
       const numberOfLocks = 2
       const primesPerLock = 2
-      randomNumberAccumulator = await new RandomNumberAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, BYTES_PER_uint256)
+      randomNumberAccumulator = await new RandomPrimeAccumulator__factory(ethersSigner).deploy(numberOfLocks, primesPerLock, BYTES_PER_uint256)
 
       for (let i = 0; i < 2; i++) {
         await randomNumberAccumulator.accumulate(_256BitPrimes[0], MAX_GAS_LIMIT_OPTION)

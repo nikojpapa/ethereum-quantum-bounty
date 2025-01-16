@@ -33,6 +33,11 @@ class PrimeFactoringBountyWithPredeterminedLocksUtils extends BountyUtils {
     }
   ]
 
+  constructor (lockAndKeys?: Array<{lock: string, keys: string[]}>) {
+    super()
+    if (lockAndKeys != null) this.locksAndKeys = lockAndKeys
+  }
+
   public async deployBounty (): Promise<PrimeFactoringBountyWithPredeterminedLocks> {
     const ethersSigner = ethers.provider.getSigner()
     const locks = await this.getLocks()
@@ -48,20 +53,24 @@ class PrimeFactoringBountyWithPredeterminedLocksUtils extends BountyUtils {
   }
 
   public async solveBounty (bounty: BountyContract, getUserBalance?: () => Promise<BigNumber>): Promise<SolveAttemptResult> {
-    const solutions = this._getPrimes().map(primes => this.encodeByteArray(primes))
+    const solutions = this.getSolutions()
     return solveBountyReturningUserBalanceBeforeFinalSolution(solutions, bounty, getUserBalance)
   }
 
   public async solveBountyPartially (bounty: BountyContract): Promise<void> {
     const primes = this._getPrimes()
-    const solution = this.encodeByteArray(primes[0])
+    const solution = this.getSolutions()[0]
     await submitSolution(0, solution, bounty)
   }
 
   public async solveBountyIncorrectly (bounty: BountyContract): Promise<ContractTransaction> {
     const primes = this._getPrimes()
-    const solution = this.encodeByteArray(primes[0])
+    const solution = this.getSolutions()[0]
     return await submitSolution(1, solution, bounty)
+  }
+
+  public getSolutions (): bytes[] {
+    return this._getPrimes().map(primes => this.encodeByteArray(primes))
   }
 
   private encodeByteArray (value: bytes[]): bytes {

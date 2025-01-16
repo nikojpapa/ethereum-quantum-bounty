@@ -54,6 +54,22 @@ Deploy scripts are located in the `deploy` directory, where a fallback account a
 
 - Account address: `0xD151E5Fc0a3E895097B705a40B183058036ad111`
 - SignatureBounty address: `0xe5c4c1107ed3426eC5c488E6F9D1598d7AFe3A90`
+
+
+## Dev Info
+### Deploying
+```bash
+npx hardhat deploy --tags <TAGS_EXPORTED_FROM_etherium-quantum-bounty/deploy/...>
+```
+
+### Testing
+```bash
+npx hardhat test --grep "<SUBSTRING_OF_NAME_IN_'DESCRIBE'_FUNCTION>"
+```
+
+### Resources
+- [Solidity By Example](https://solidity-by-example.org/)
+- [Useful Solidity utilities](https://docs.openzeppelin.com/)
       
 
 # README of parent repo

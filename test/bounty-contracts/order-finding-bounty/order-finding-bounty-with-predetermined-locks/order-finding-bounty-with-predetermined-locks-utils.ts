@@ -18,14 +18,19 @@ import { Buffer } from 'buffer'
 class OrderFindingBountyWithPredeterminedLocksUtils extends BountyUtils {
   private readonly locksAndKeys = [
     {
-      lock: [15, 7],
-      key: 4
+      lock: [BigNumber.from(15).toHexString(), BigNumber.from(7).toHexString()],
+      key: BigNumber.from(4).toHexString()
     },
     {
-      lock: [23, 17],
-      key: 22
+      lock: [BigNumber.from(23).toHexString(), BigNumber.from(17).toHexString()],
+      key: BigNumber.from(22).toHexString()
     }
   ]
+
+  constructor (lockAndKeys?: Array<{lock: string[], key: string}>) {
+    super()
+    if (lockAndKeys != null) this.locksAndKeys = lockAndKeys
+  }
 
   public async deployBounty (): Promise<OrderFindingBountyWithPredeterminedLocks> {
     const ethersSigner = ethers.provider.getSigner()
@@ -42,20 +47,20 @@ class OrderFindingBountyWithPredeterminedLocksUtils extends BountyUtils {
   }
 
   public async solveBounty (bounty: BountyContract, getUserBalance?: () => Promise<BigNumber>): Promise<SolveAttemptResult> {
-    return solveBountyReturningUserBalanceBeforeFinalSolution(this._getKeys(), bounty, getUserBalance)
+    return solveBountyReturningUserBalanceBeforeFinalSolution(this.getSolutions(), bounty, getUserBalance)
   }
 
   public async solveBountyPartially (bounty: BountyContract): Promise<void> {
-    const primes = this._getKeys()
+    const primes = this.getSolutions()
     await submitSolution(0, primes[0], bounty)
   }
 
   public async solveBountyIncorrectly (bounty: BountyContract): Promise<ContractTransaction> {
-    const keys = this._getKeys()
+    const keys = this.getSolutions()
     return await submitSolution(1, keys[0], bounty)
   }
 
-  private _getKeys (): bytes[] {
+  public getSolutions (): bytes[] {
     return this.locksAndKeys.map(lockAndKeys => Buffer.from(arrayify(lockAndKeys.key)))
   }
 
