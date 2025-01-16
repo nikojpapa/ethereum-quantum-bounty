@@ -8,7 +8,7 @@ import fs from 'fs'
 const MAX_GAS_LIMIT_OPTION = { gasLimit: BigNumber.from('0x1c9c380') }
 
 export const deployPrimeFactoringBountyFactory = (primeByteLength: number): DeployFunction => {
-  const name = `PrimeFactoringBountyWithRsaUfo_${primeByteLength * 3}Key`
+  const name = `PrimeFactoringBountyWithRsaUfo_${primeByteLength * 8 * 3}Key`
   return async function (hre: HardhatRuntimeEnvironment) {
     const provider = ethers.provider
     const from = await provider.getSigner().getAddress()
@@ -18,7 +18,7 @@ export const deployPrimeFactoringBountyFactory = (primeByteLength: number): Depl
     let gasUsed = BigNumber.from(0)
 
     const deployResult = await hre.deployments.deploy(
-        name, {
+        'PrimeFactoringBountyWithRsaUfo', {
         ...MAX_GAS_LIMIT_OPTION,
         from,
         args: [numberOfLocks, primeByteLength],
@@ -28,7 +28,7 @@ export const deployPrimeFactoringBountyFactory = (primeByteLength: number): Depl
     console.log(`==${name} addr=`, deployResult.address)
     gasUsed = gasUsed.add(deployResult.receipt?.gasUsed)
 
-    const bounty = await ethers.getContractAt(name, deployResult.address)
+    const bounty = await ethers.getContractAt('PrimeFactoringBountyWithRsaUfo', deployResult.address)
     while (!(await bounty.generationIsDone())) {
       const tx = await bounty.triggerLockAccumulation()
       const receipt = await tx.wait()
@@ -39,7 +39,7 @@ export const deployPrimeFactoringBountyFactory = (primeByteLength: number): Depl
 }
 
 export const deployOrderFindingBountyFactory = (byteSizeOfPrimes: number): DeployFunction => {
-  const name = `OrderFindingBountyWithLockGeneration_${byteSizeOfPrimes * 3}Key`
+  const name = `OrderFindingBountyWithLockGeneration_${byteSizeOfPrimes * 8 * 3}Key`
   return async function (hre: HardhatRuntimeEnvironment) {
     const provider = ethers.provider
     const from = await provider.getSigner().getAddress()
@@ -53,7 +53,7 @@ export const deployOrderFindingBountyFactory = (byteSizeOfPrimes: number): Deplo
     let numberOfAccumulations = 0
 
     const deployResult = await hre.deployments.deploy(
-      name, {
+      'OrderFindingBountyWithLockGeneration', {
         ...MAX_GAS_LIMIT_OPTION,
         from,
         args: [numberOfLocks, byteSizeOfModulus, gcdIterationsPerCall],
@@ -63,7 +63,7 @@ export const deployOrderFindingBountyFactory = (byteSizeOfPrimes: number): Deplo
     console.log(`==${name} addr=`, deployResult.address)
     gasUsed = gasUsed.add(deployResult.receipt?.gasUsed)
 
-    const bounty = await ethers.getContractAt(name, deployResult.address)
+    const bounty = await ethers.getContractAt('OrderFindingBountyWithLockGeneration', deployResult.address)
     while (!(await bounty.callStatic.generationIsDone())) {
       ++numberOfAccumulations
       const tx = await bounty.triggerLockAccumulation(MAX_GAS_LIMIT_OPTION)

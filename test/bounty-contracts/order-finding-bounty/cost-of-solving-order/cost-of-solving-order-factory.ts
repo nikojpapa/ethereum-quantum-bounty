@@ -1,7 +1,6 @@
 import {
-  OrderFindingBountyWithPredeterminedLocks, OrderFindingBountyWithPredeterminedLocks__factory,
+  OrderFindingBountyWithPredeterminedLocks
 } from '../../../../typechain'
-import { bytes } from '../../../solidityTypes'
 import { BigNumber } from 'ethers'
 import { expect } from 'chai'
 import { submitSolution } from '../../bounty-utils'
@@ -14,7 +13,7 @@ import OrderFindingBountyWithPredeterminedLocksUtils
 const HEX_PREFIX = '0x'
 
 
-export function costOfSolvingPrimesFactory (lock: string[]) {
+export function costOfSolvingOrderFactory (lock: string[]) {
   return () => {
     let bounty: OrderFindingBountyWithPredeterminedLocks
     let bountyUtils: OrderFindingBountyWithPredeterminedLocksUtils
