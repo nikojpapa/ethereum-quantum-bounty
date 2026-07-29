@@ -6,7 +6,7 @@ import config from '../hardhat.config'
 import { MetamaskClient } from 'hardhat_metamask_client'
 
 const deploySignatureBounty: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const client = new MetamaskClient(config, 'goerli')
+  const client = new MetamaskClient(config, 'sepolia')
   const from = await (await client.getSigner()).getAddress()
   await new Create2Factory(ethers.provider).deployFactory()
 

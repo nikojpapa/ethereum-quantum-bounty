@@ -50,7 +50,7 @@ Because of this, the signature sent to this account consists of three parts, whe
 
 
 ### Deploy scripts
-Deploy scripts are located in the `deploy` directory, where a fallback account and an associated `SignatureBounty` was deployed to Goerli.
+Deploy scripts are located in the `deploy` directory, where a fallback account and an associated `SignatureBounty` was deployed to Sepolia.
 
 - Account address: `0xD151E5Fc0a3E895097B705a40B183058036ad111`
 - SignatureBounty address: `0xe5c4c1107ed3426eC5c488E6F9D1598d7AFe3A90`
@@ -58,6 +58,10 @@ Deploy scripts are located in the `deploy` directory, where a fallback account a
 
 ## Dev Info
 ### Deploying
+For deploying to Sepolia, set the following environment variables (e.g. in a `.env` file):
+- `PRIVATE_KEY` — the deployer's wallet private key, used to sign deployment transactions (required)
+- `INFURA_ID` — your Infura project ID, used to construct the Sepolia RPC URL (required)
+
 ```bash
 npx hardhat deploy --tags <TAGS_EXPORTED_FROM_etherium-quantum-bounty/deploy/...>
 ```

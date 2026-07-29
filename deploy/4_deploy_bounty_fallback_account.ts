@@ -10,11 +10,11 @@ import config from '../hardhat.config'
 dotenv.config()
 
 const deployBountyFallbackAccount: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const client = new MetamaskClient(config, 'goerli')
+  const client = new MetamaskClient(config, 'sepolia')
   const from = await (await client.getSigner()).getAddress()
 
   const entrypoint = await hre.deployments.get('EntryPoint')
-  const signatureBounty = await hre.deployments.get('SignatureBounty')
+  const signatureBounty = await hre.deployments.get('SignatureBountyWithLockGeneration')
   const factoryDeployment = await hre.deployments.deploy(
     'BountyFallbackAccountFactory', {
       from,
@@ -25,7 +25,7 @@ const deployBountyFallbackAccount: DeployFunction = async function (hre: Hardhat
   const factory = await ethers.getContractAt('BountyFallbackAccountFactory', factoryDeployment.address)
   console.log('==BountyFallbackAccountFactory addr=', factory.address)
 
-  const accountOwner = createAccountOwnerLamport(32, 32, from)
+  const accountOwner = createAccountOwnerLamport(32, 32, process.env.PRIVATE_KEY)
   const salt = randomBytes(16)
   const addressParams = [accountOwner.baseWallet.address, salt, accountOwner.lamportKeys.publicKeys, signatureBounty.address]
   // @ts-ignore
