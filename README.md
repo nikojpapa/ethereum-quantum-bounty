@@ -103,6 +103,16 @@ These are `describe.skip` due to their long execution time.
 To run them, remove `.skip` from the `describe` call in the test file.
 It is recommended to run these tests separately from other tests.
 
+**Prime-factoring gas breakdown (Miller-Rabin vs. multiply vs. compare):**
+```bash
+npx hardhat test --grep "Test the gas of parts of solving/deploying the prime factoring bounty"
+```
+
+Located at `test/bounty-contracts/prime-factoring-bounty/cost-of-solving-primes-parts.test.ts`.
+This test isolates the steps of solving and deploying and prints their individual gas costs.
+It demonstrates that the majority of gas to solve a lock is consumed by the
+Miller-Rabin primality test.
+
 **Prime-factoring, 4608-bit (solving all 119 locks and a single lock):**
 ```bash
 # Edit cost-of-solving-primes-4608.test.ts — change `describe.skip(` to `describe(`
