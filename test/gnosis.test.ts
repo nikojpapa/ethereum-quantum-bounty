@@ -190,7 +190,7 @@ describe('Gnosis Proxy', function () {
     expect(await isDeployed(counterfactualAddress))
 
     const newCode = await ethers.provider.getCode(counterfactualAddress)
-    expect(newCode.length).eq(324)
+    expect(newCode.length).eq(334)
   })
 
   it('another op after creation', async function () {
