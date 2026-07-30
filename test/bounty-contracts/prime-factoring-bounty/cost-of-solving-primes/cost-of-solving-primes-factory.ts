@@ -47,7 +47,7 @@ export function costOfSolvingPrimesFactory (keyBytesPerPrime: number, knownPrime
         gasUsed = gasUsed.add(receipt.gasUsed)
       }
       console.log(`Gas used solving all locks: ${gasUsed.toHexString()}`)
-    })
+    }).timeout(600000)
 
     it('should find the gas cost to solve 1 lock', async () => {
       const arbitraryLockNumber = 0

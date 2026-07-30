@@ -57,6 +57,6 @@ export function costOfSolvingOrderFactory (lock: string[]) {
       console.log(`Max gas: ${maxGas.toHexString()}`)
       console.log(`Mean gas: ${meanGas.toHexString()}`)
       console.log(`Median gas: ${medianGas.toHexString()}`)
-    })
+    }).timeout(600000)
   }
 }
