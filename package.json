@@ -20,7 +20,7 @@
     "ci-gas-calc": "yarn gas-calc && yarn check-gas-reports",
     "check-gas-reports": "./scripts/check-gas-reports",
     "runop": "hardhat run src/runop.ts ",
-    "runop-goerli": "AA_URL=https://account-abstraction-goerli.nethermind.io yarn runop --network goerli",
+    "runop-sepolia": "AA_URL=https://account-abstraction-sepolia.nethermind.io yarn runop --network sepolia",
     "runop3": "hardhat run src/runop3.ts "
   },
   "keywords": [],

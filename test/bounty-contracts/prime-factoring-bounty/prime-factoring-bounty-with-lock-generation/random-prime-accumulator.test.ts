@@ -4,7 +4,7 @@ import { expect } from 'chai'
 import { BigNumber } from 'ethers'
 import { arrayify } from 'ethers/lib/utils'
 
-describe.skip('RandomPrimeAccumulator', () => {
+describe('RandomPrimeAccumulator', () => {
   const BYTES_PER_uint256 = 32
   const BITS_PER_BYTE = 8
   const MAX_GAS_LIMIT_OPTION = { gasLimit: BigNumber.from('0x1c9c380') }
@@ -53,10 +53,6 @@ describe.skip('RandomPrimeAccumulator', () => {
     expect(await randomNumberAccumulator.isDone()).to.be.eq(true)
   })
 
-  it('should always set the last bit', async () => {
-    expect.fail()
-  })
-
   it('should not accumulate if already done', async () => {
     const numberOfLocks = 1
     const primesPerLock = 1
@@ -92,7 +88,7 @@ describe.skip('RandomPrimeAccumulator', () => {
     const oneBytePrime = 0xbf
     const remainingBits = (BYTES_PER_uint256 - bytesPerPrime) * BITS_PER_BYTE
     const primeWithAdditionalBitsThatMakeItComposite = BigNumber.from(oneBytePrime).shl(remainingBits)
-    await randomNumberAccumulator.accumulate(primeWithAdditionalBitsThatMakeItComposite)
+    await randomNumberAccumulator.accumulate(primeWithAdditionalBitsThatMakeItComposite, MAX_GAS_LIMIT_OPTION)
     expect(await randomNumberAccumulator.isDone()).to.be.eq(true)
   })
 
