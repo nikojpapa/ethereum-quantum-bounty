@@ -88,7 +88,7 @@ describe('RandomPrimeAccumulator', () => {
     const oneBytePrime = 0xbf
     const remainingBits = (BYTES_PER_uint256 - bytesPerPrime) * BITS_PER_BYTE
     const primeWithAdditionalBitsThatMakeItComposite = BigNumber.from(oneBytePrime).shl(remainingBits)
-    await randomNumberAccumulator.accumulate(primeWithAdditionalBitsThatMakeItComposite)
+    await randomNumberAccumulator.accumulate(primeWithAdditionalBitsThatMakeItComposite, MAX_GAS_LIMIT_OPTION)
     expect(await randomNumberAccumulator.isDone()).to.be.eq(true)
   })
 

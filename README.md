@@ -187,7 +187,7 @@ If you use this work, please cite:
 ```bibtex
 @misc{blockchainVerifiableQuantumSupremacy,
       title={Blockchain Verifiable Proof of Quantum Supremacy as a Trigger for Quantum-Secure Signatures}, 
-      author={Nicholas J. C. Papadopoulos, Ramin Ayanzadeh},
+      author={Nicholas J. C. Papadopoulos and Ramin Ayanzadeh},
       year={2026},
       eprint={2601.05534},
       archivePrefix={arXiv},
