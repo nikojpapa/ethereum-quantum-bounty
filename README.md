@@ -74,7 +74,128 @@ npx hardhat test --grep "<SUBSTRING_OF_NAME_IN_'DESCRIBE'_FUNCTION>"
 ### Resources
 - [Solidity By Example](https://solidity-by-example.org/)
 - [Useful Solidity utilities](https://docs.openzeppelin.com/)
-      
+
+### Testing Methodology Claims and Results
+
+Each claim in the evaluation methodology is backed by specific test suites.
+Use `--grep` to run individual suites; omit it to run all tests.
+
+#### Gas costs: deployment and solution verification
+
+The gas cost of deploying bounty contracts (including lock generation across repeated
+`triggerLockAccumulation` calls) is measured by the deploy scripts. These use hardhat-deploy
+tags and can run against a local node or testnet.
+
+**Prime-factoring (RSA-UFO), 4608-bit key:**
+```bash
+npx hardhat deploy --tags PrimeFactoringBounty4608Key
+```
+
+**Order-finding, 4608-bit key:**
+```bash
+npx hardhat deploy --tags OrderFindingBounty4608Key
+```
+
+Each deploy script logs the total gas used and writes it to `Output.txt`.
+
+The gas cost of verifying submitted solutions is measured by cost-of-solving tests.
+These are `describe.skip` due to their long execution time.
+To run them, remove `.skip` from the `describe` call in the test file.
+It is recommended to run these tests separately from other tests.
+
+**Prime-factoring, 4608-bit (solving all 119 locks and a single lock):**
+```bash
+# Edit cost-of-solving-primes-4608.test.ts — change `describe.skip(` to `describe(`
+npx hardhat test --grep "Test the cost of solving the prime factoring bounty with 4608-bit key"
+```
+
+**Order-finding, 4608-bit (min, max, mean, median gas across exponent sizes):**
+```bash
+# Edit cost-of-solving-order-4608.test.ts — change `describe.skip(` to `describe(`
+npx hardhat test --grep "Test the cost of solving the order finding bounty with 4608-bit key"
+```
+
+#### Prime-factoring: core building blocks
+
+**Random bytes accumulator** — validates accumulation continues while insufficient bytes remain,
+halts once the target is reached, and discards excess bits above the target:
+```bash
+npx hardhat test --grep "RandomBytesAccumulator"
+```
+
+**Miller-Rabin primality test** — confirms correct identification of known primes and composites,
+ensuring solutions are accepted only when all factors are prime:
+```bash
+npx hardhat test --grep "Miller-Rabin"
+```
+
+#### Prime-factoring: lock generation (RSA-UFO)
+
+Verifies that lock generation cannot be invoked after all bytes are accumulated, that
+subsequent deployments produce distinct non-deterministic locks, and that locks have the
+correct specified size:
+```bash
+npx hardhat test --grep "PrimeFactoringBountyWithRsaUfo"
+```
+
+#### Prime-factoring: bounty contract behavior (predetermined locks)
+
+Validates the general bounty logic — awarding funds, setting the solved flag,
+blocking further funding/solutions after solving, and enforcing the commit-reveal scheme:
+```bash
+npx hardhat test --grep "PrimeFactoringBountyWithPredeterminedLocks"
+```
+
+#### Order-finding: lock generation
+
+Validates that incomplete generation rejects solutions:
+```bash
+npx hardhat test --grep "OrderFindingBountyWithLockGeneration"
+```
+
+Tests the internal order-finding accumulator separately:
+```bash
+npx hardhat test --grep "OrderFindingAccumulator"
+```
+
+#### Order-finding: bounty contract behavior (predetermined locks)
+
+```bash
+npx hardhat test --grep "OrderFindingBountyWithPredeterminedLocks"
+```
+
+#### Fallback account
+
+Confirms the account uses standard ECDSA signature verification while the linked bounty is
+unsolved, then transitions to additionally require Lamport signatures after the bounty is
+solved:
+```bash
+npx hardhat test --grep "BountyFallbackAccount"
+```
+
+#### Running all methodology tests at once
+
+```bash
+npx hardhat test --grep "RandomBytesAccumulator|Miller-Rabin|PrimeFactoringBounty|OrderFindingBounty|BountyFallbackAccount"
+```
+
+
+## Citation
+
+If you use this work, please cite:
+
+```bibtex
+@misc{blockchainVerifiableQuantumSupremacy,
+      title={Blockchain Verifiable Proof of Quantum Supremacy as a Trigger for Quantum-Secure Signatures}, 
+      author={Nicholas J. C. Papadopoulos, Ramin Ayanzadeh},
+      year={2026},
+      eprint={2601.05534},
+      archivePrefix={arXiv},
+      primaryClass={cs.CR},
+      url={https://arxiv.org/abs/2601.05534}, 
+}
+```
+
 
 # README of parent repo
 Implementation of contracts for [ERC-4337](https://eips.ethereum.org/EIPS/eip-4337) account abstraction via alternative mempool.
