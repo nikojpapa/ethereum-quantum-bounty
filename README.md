@@ -125,6 +125,26 @@ npx hardhat test --grep "Test the cost of solving the prime factoring bounty wit
 npx hardhat test --grep "Test the cost of solving the order finding bounty with 4608-bit key"
 ```
 
+#### Commit-reveal scheme
+
+Validates the commit-reveal mechanism shared across all bounty contracts — committing a
+solution hash, retrieving commit info, overriding an existing commit, reverting queries
+when no commit exists, blocking commits after the bounty is solved, preventing reveals
+without a prior commit, and enforcing the 24-hour reveal delay:
+
+```bash
+npx hardhat test --grep "Commit reveal"
+```
+
+#### Fallback account
+
+Confirms the account uses standard ECDSA signature verification while the linked bounty is
+unsolved, then transitions to additionally require Lamport signatures after the bounty is
+solved:
+```bash
+npx hardhat test --grep "BountyFallbackAccount"
+```
+
 #### Prime-factoring: core building blocks
 
 **Random bytes accumulator** — validates accumulation continues while insufficient bytes remain,
@@ -172,21 +192,6 @@ npx hardhat test --grep "OrderFindingAccumulator"
 
 ```bash
 npx hardhat test --grep "OrderFindingBountyWithPredeterminedLocks"
-```
-
-#### Fallback account
-
-Confirms the account uses standard ECDSA signature verification while the linked bounty is
-unsolved, then transitions to additionally require Lamport signatures after the bounty is
-solved:
-```bash
-npx hardhat test --grep "BountyFallbackAccount"
-```
-
-#### Running all methodology tests at once
-
-```bash
-npx hardhat test --grep "RandomBytesAccumulator|Miller-Rabin|PrimeFactoringBounty|OrderFindingBounty|BountyFallbackAccount"
 ```
 
 
