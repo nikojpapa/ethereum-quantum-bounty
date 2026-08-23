@@ -57,6 +57,45 @@ Deploy scripts are located in the `deploy` directory, where a fallback account a
 
 
 ## Dev Info
+
+### Prerequisites
+
+Reproducing the paper's results requires the following toolchain:
+
+- **Node.js** `18.17.1`
+- **Yarn** `1.22.22`
+
+Yarn is the package manager used to generate the frozen `yarn.lock`. Use Yarn (not npm)
+so the lockfile is honored exactly as shipped.
+
+### Installation
+
+```bash
+yarn install --frozen-lockfile
+```
+
+The `hardhat-deploy` plugin must stay pinned to `0.11.23`; newer releases are
+incompatible with the deterministic (CREATE2) deployments used by the gas-measurement
+scripts. If a dependency change causes the frozen lockfile to be rejected, re-pin the
+plugin and regenerate the lockfile:
+
+```bash
+yarn add --exact hardhat-deploy@0.11.23
+yarn install
+```
+
+### Local execution (no credentials required)
+
+Compiling, testing, and running the local gas-measurement deployments require **no**
+`.env` file or wallet credentials. The local Hardhat network supplies its own funded
+accounts, so `PRIVATE_KEY` and `INFURA_ID` are unnecessary for local reproduction.
+
+`PRIVATE_KEY` and `INFURA_ID` are only needed to deploy to Sepolia (see
+[Deploying](#deploying)); they are never required for local compilation or testing.
+The Sepolia-only deploy scripts (`SignatureBounty`, `BountyFallbackAccount`) skip
+automatically on any non-Sepolia network, so a plain `npx hardhat deploy` on the local
+Hardhat network does not require credentials.
+
 ### Deploying
 For deploying to Sepolia, set the following environment variables (e.g. in a `.env` file):
 - `PRIVATE_KEY` — the deployer's wallet private key, used to sign deployment transactions (required)
@@ -65,6 +104,9 @@ For deploying to Sepolia, set the following environment variables (e.g. in a `.e
 ```bash
 npx hardhat deploy --tags <TAGS_EXPORTED_FROM_etherium-quantum-bounty/deploy/...>
 ```
+
+To run the gas-measurement deployments locally instead (no credentials needed), see
+[Gas costs](#gas-costs-deployment-and-solution-verification) below.
 
 ### Testing
 ```bash
@@ -86,6 +128,14 @@ The gas cost of deploying bounty contracts (including lock generation across rep
 `triggerLockAccumulation` calls) is measured by the deploy scripts. These use hardhat-deploy
 tags and can run against a local node or testnet.
 
+**Expected results** (as reported in the paper):
+
+| Measurement | Expected gas |
+|---|---:|
+| Deployment/generation of 119 locks | 237,898,716 |
+| Verification of one lock | ≈ 6,110,290 |
+| Verification of all 119 locks | ≈ 741,048,802 |
+
 **Prime-factoring (RSA-UFO), 4608-bit key:**
 ```bash
 npx hardhat deploy --tags PrimeFactoringBounty4608Key
@@ -99,9 +149,11 @@ npx hardhat deploy --tags OrderFindingBounty4608Key
 Each deploy script logs the total gas used and writes it to `Output.txt`.
 
 The gas cost of verifying submitted solutions is measured by cost-of-solving tests.
-These are `describe.skip` due to their long execution time.
-To run them, remove `.skip` from the `describe` call in the test file.
-It is recommended to run these tests separately from other tests.
+These are enabled (not skipped) and are long-running; the Mocha timeout in
+`hardhat.config.ts` is set to `600000` ms (10 minutes) so the contract-deployment
+setup and the 119-lock solve loop are not cut off. Run them with `--grep` as shown
+below, or omit `--grep` to run the full suite. Running them separately from the rest
+of the test suite is recommended because of their runtime.
 
 **Prime-factoring gas breakdown (Miller-Rabin vs. multiply vs. compare):**
 ```bash
@@ -115,13 +167,11 @@ Miller-Rabin primality test.
 
 **Prime-factoring, 4608-bit (solving all 119 locks and a single lock):**
 ```bash
-# Edit cost-of-solving-primes-4608.test.ts — change `describe.skip(` to `describe(`
 npx hardhat test --grep "Test the cost of solving the prime factoring bounty with 4608-bit key"
 ```
 
 **Order-finding, 4608-bit (min, max, mean, median gas across exponent sizes):**
 ```bash
-# Edit cost-of-solving-order-4608.test.ts — change `describe.skip(` to `describe(`
 npx hardhat test --grep "Test the cost of solving the order finding bounty with 4608-bit key"
 ```
 

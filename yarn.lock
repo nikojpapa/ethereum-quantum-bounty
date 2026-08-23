@@ -6017,9 +6017,9 @@ hardhat-deploy-ethers@^0.3.0-beta.11:
   resolved "https://registry.npmjs.org/hardhat-deploy-ethers/-/hardhat-deploy-ethers-0.3.0-beta.13.tgz"
   integrity sha512-PdWVcKB9coqWV1L7JTpfXRCI91Cgwsm7KLmBcwZ8f0COSm1xtABHZTyz3fvF6p42cTnz1VM0QnfDvMFlIRkSNw==
 
-hardhat-deploy@^0.11.23:
+hardhat-deploy@0.11.23:
   version "0.11.23"
-  resolved "https://registry.npmjs.org/hardhat-deploy/-/hardhat-deploy-0.11.23.tgz"
+  resolved "https://registry.yarnpkg.com/hardhat-deploy/-/hardhat-deploy-0.11.23.tgz#7c5d11ba32acfd7c5730490bf6af8815b435c996"
   integrity sha512-9F+sDRX79D/oV1cUEE0k2h5LiccrnzXEtrMofL5PTVDCJfUnRvhQqCRi4NhcYmxf2+MBkOIJv5KyzP0lz6ojTw==
   dependencies:
     "@types/qs" "^6.9.7"

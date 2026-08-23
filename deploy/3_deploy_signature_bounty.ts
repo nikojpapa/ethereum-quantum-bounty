@@ -6,6 +6,11 @@ import config from '../hardhat.config'
 import { MetamaskClient } from 'hardhat_metamask_client'
 
 const deploySignatureBounty: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+  if (hre.network.name !== 'sepolia') {
+    console.log('SignatureBounty deploy targets Sepolia only; skipping on network', hre.network.name)
+    return
+  }
+
   const client = new MetamaskClient(config, 'sepolia')
   const from = await (await client.getSigner()).getAddress()
   await new Create2Factory(ethers.provider).deployFactory()

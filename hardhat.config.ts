@@ -64,7 +64,7 @@ const config: HardhatUserConfig = {
     proxy: getNetwork1('http://localhost:8545')
   },
   mocha: {
-    timeout: 100000
+    timeout: 600000
   },
 
   etherscan: {
