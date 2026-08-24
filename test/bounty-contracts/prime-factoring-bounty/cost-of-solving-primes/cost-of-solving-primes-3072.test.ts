@@ -18,7 +18,7 @@ for (const num of primesThatGoIntoLockThreeTimes) {
   for (let i = 0; i < 3; i++) primeFactors.push(num)
 }
 
-describe.skip(
+describe(
   'Test the cost of solving the prime factoring bounty with 3072-bit key',
   costOfSolvingPrimesFactory(128, primeFactors)
 )

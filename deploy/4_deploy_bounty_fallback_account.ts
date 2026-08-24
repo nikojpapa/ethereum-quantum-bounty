@@ -10,6 +10,11 @@ import config from '../hardhat.config'
 dotenv.config()
 
 const deployBountyFallbackAccount: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+  if (hre.network.name !== 'sepolia') {
+    console.log('BountyFallbackAccount deploy targets Sepolia only; skipping on network', hre.network.name)
+    return
+  }
+
   const client = new MetamaskClient(config, 'sepolia')
   const from = await (await client.getSigner()).getAddress()
 

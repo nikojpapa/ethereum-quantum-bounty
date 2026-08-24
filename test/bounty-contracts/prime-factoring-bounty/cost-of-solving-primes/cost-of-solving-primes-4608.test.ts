@@ -27,7 +27,7 @@ const primeFactors = smallPrimes
     .concat(mediumPrimes)
     .concat(largePrimes)
 
-describe.skip(
+describe(
   'Test the cost of solving the prime factoring bounty with 4608-bit key',
   costOfSolvingPrimesFactory(192, primeFactors)
 )
