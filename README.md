@@ -149,7 +149,7 @@ npx hardhat deploy --tags OrderFindingBounty4608Key
 Each deploy script logs the total gas used and writes it to `Output.txt`.
 
 The gas cost of verifying submitted solutions is measured by cost-of-solving tests.
-These are enabled (not skipped) and are long-running; the Mocha timeout in
+These are long-running; the Mocha timeout in
 `hardhat.config.ts` is set to `600000` ms (10 minutes) so the contract-deployment
 setup and the 119-lock solve loop are not cut off. Run them with `--grep` as shown
 below, or omit `--grep` to run the full suite. Running them separately from the rest
